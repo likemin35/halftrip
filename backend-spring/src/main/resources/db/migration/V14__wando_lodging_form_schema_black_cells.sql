@@ -1,0 +1,30 @@
+UPDATE lodging_form_templates
+SET template_schema_json = '[
+  {"key":"lodging_name","label":"Lodging name","helperText":"Lodging name","type":"text","x":214,"y":169,"width":409,"height":31,"editable":true,"multiline":false},
+  {"key":"address","label":"Lodging address","helperText":"Lodging address","type":"text","x":214,"y":206,"width":409,"height":31,"editable":true,"multiline":false},
+  {"key":"representative_name","label":"Representative","helperText":"Representative name","type":"text","x":214,"y":243,"width":348,"height":31,"editable":true,"multiline":false},
+  {"key":"host_signature","label":"Representative signature","helperText":"Representative signature","type":"signature","x":572,"y":243,"width":54,"height":31,"editable":true,"multiline":false},
+  {"key":"phone_number","label":"Representative phone","helperText":"Representative phone","type":"text","x":214,"y":280,"width":409,"height":31,"editable":true,"multiline":false},
+  {"key":"agreed_personal_info_yes","label":"Top agree","helperText":"Top agree checkbox","type":"checkbox","x":419,"y":344,"width":14,"height":14,"editable":true,"multiline":false},
+  {"key":"agreed_personal_info_no","label":"Top disagree","helperText":"Top disagree checkbox","type":"checkbox","x":488,"y":344,"width":14,"height":14,"editable":true,"multiline":false},
+  {"key":"traveler_name","label":"Guest name","helperText":"Guest name","type":"text","x":214,"y":391,"width":409,"height":31,"editable":true,"multiline":false},
+  {"key":"traveler_phone_number","label":"Guest phone","helperText":"Guest phone","type":"text","x":214,"y":428,"width":409,"height":31,"editable":true,"multiline":false},
+  {"key":"residence","label":"Residence","helperText":"Residence","type":"text","x":214,"y":465,"width":409,"height":31,"editable":true,"multiline":false},
+  {"key":"occupancy_count","label":"Guest count","helperText":"Guest count","type":"text","x":525,"y":502,"width":56,"height":31,"editable":true,"multiline":false},
+  {"key":"payment_amount","label":"Payment amount","helperText":"Payment amount","type":"text","x":515,"y":614,"width":95,"height":31,"editable":true,"multiline":false},
+  {"key":"payment_method_lodging_app","label":"Lodging app","helperText":"Lodging app payment","type":"checkbox","x":253,"y":662,"width":14,"height":14,"editable":true,"multiline":false},
+  {"key":"payment_method_card","label":"Card","helperText":"Card payment","type":"checkbox","x":333,"y":662,"width":14,"height":14,"editable":true,"multiline":false},
+  {"key":"payment_method_other","label":"Other","helperText":"Other payment","type":"checkbox","x":486,"y":662,"width":14,"height":14,"editable":true,"multiline":false},
+  {"key":"payment_method_other_text","label":"Other payment text","helperText":"Other payment text","type":"text","x":542,"y":654,"width":80,"height":28,"editable":true,"multiline":false},
+  {"key":"payment_date","label":"Payment date","helperText":"Payment date","type":"text","x":323,"y":697,"width":250,"height":31,"editable":true,"multiline":false},
+  {"key":"agreed_stay_proof_yes","label":"Bottom agree","helperText":"Bottom agree checkbox","type":"checkbox","x":205,"y":770,"width":14,"height":14,"editable":true,"multiline":false},
+  {"key":"agreed_stay_proof_no","label":"Bottom disagree","helperText":"Bottom disagree checkbox","type":"checkbox","x":276,"y":770,"width":14,"height":14,"editable":true,"multiline":false},
+  {"key":"confirmation_date","label":"Confirmation date","helperText":"Confirmation date","type":"text","x":300,"y":806,"width":250,"height":31,"editable":true,"multiline":false},
+  {"key":"traveler_name","label":"Applicant name","helperText":"Applicant name","type":"text","x":214,"y":865,"width":352,"height":31,"editable":true,"multiline":false},
+  {"key":"applicant_signature","label":"Applicant signature","helperText":"Applicant signature","type":"signature","x":572,"y":865,"width":54,"height":31,"editable":true,"multiline":false},
+  {"key":"traveler_phone_number","label":"Applicant phone","helperText":"Applicant phone","type":"text","x":214,"y":902,"width":409,"height":31,"editable":true,"multiline":false}
+]',
+    data_source_note = 'MANUAL_TEMPLATE_WANDO_BLACK_CELLS',
+    preview_subtitle = 'Wando fixed PDF coordinate template aligned to table cells.',
+    updated_at = NOW()
+WHERE region_id = 1;

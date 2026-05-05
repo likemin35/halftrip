@@ -1,0 +1,19 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: travel-mvp-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: travel_mvp
+      MYSQL_USER: travel_user
+      MYSQL_PASSWORD: travel_password
+      MYSQL_ROOT_PASSWORD: root_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+
+volumes:
+  mysql_data:
+

@@ -1,0 +1,30 @@
+UPDATE lodging_form_templates
+SET template_schema_json = '[
+  {"key":"lodging_name","label":"숙박업소명","helperText":"숙박업소명","type":"text","x":220,"y":176,"width":405,"height":26,"editable":true,"multiline":false},
+  {"key":"address","label":"숙박업소 주소","helperText":"숙박업소 주소","type":"text","x":220,"y":213,"width":405,"height":26,"editable":true,"multiline":false},
+  {"key":"representative_name","label":"대표자","helperText":"숙박업소 대표자","type":"text","x":220,"y":249,"width":352,"height":26,"editable":true,"multiline":false},
+  {"key":"host_signature","label":"대표자 서명","helperText":"대표자 서명 또는 인","type":"signature","x":590,"y":248,"width":70,"height":28,"editable":true,"multiline":false},
+  {"key":"phone_number","label":"대표자 연락처","helperText":"대표자 연락처","type":"text","x":220,"y":286,"width":405,"height":26,"editable":true,"multiline":false},
+  {"key":"agreed_personal_info_yes","label":"상단 동의","helperText":"상단 동의 체크","type":"checkbox","x":419,"y":333,"width":16,"height":16,"editable":true,"multiline":false},
+  {"key":"agreed_personal_info_no","label":"상단 미동의","helperText":"상단 미동의 체크","type":"checkbox","x":490,"y":333,"width":16,"height":16,"editable":true,"multiline":false},
+  {"key":"traveler_name","label":"성명(결제자)","helperText":"숙박 이용자 성명","type":"text","x":220,"y":394,"width":405,"height":26,"editable":true,"multiline":false},
+  {"key":"traveler_phone_number","label":"휴대폰번호","helperText":"숙박 이용자 휴대폰번호","type":"text","x":220,"y":431,"width":405,"height":26,"editable":true,"multiline":false},
+  {"key":"residence","label":"거주지역","helperText":"거주지역","type":"text","x":220,"y":467,"width":405,"height":26,"editable":true,"multiline":false},
+  {"key":"occupancy_count","label":"동반인원","helperText":"동반인원","type":"text","x":523,"y":504,"width":60,"height":26,"editable":true,"multiline":false},
+  {"key":"payment_amount","label":"숙박요금 총액","helperText":"총액 숫자만 입력","type":"text","x":515,"y":632,"width":95,"height":26,"editable":true,"multiline":false},
+  {"key":"payment_method_lodging_app","label":"숙박어플","helperText":"숙박어플 결제","type":"checkbox","x":255,"y":672,"width":16,"height":16,"editable":true,"multiline":false},
+  {"key":"payment_method_card","label":"개인(신용,체크카드)","helperText":"카드 결제","type":"checkbox","x":335,"y":672,"width":16,"height":16,"editable":true,"multiline":false},
+  {"key":"payment_method_other","label":"기타","helperText":"기타 결제수단","type":"checkbox","x":488,"y":672,"width":16,"height":16,"editable":true,"multiline":false},
+  {"key":"payment_method_other_text","label":"기타 결제수단","helperText":"기타 입력","type":"text","x":542,"y":664,"width":86,"height":26,"editable":true,"multiline":false},
+  {"key":"payment_date","label":"결제일","helperText":"결제일","type":"text","x":350,"y":707,"width":235,"height":26,"editable":true,"multiline":false},
+  {"key":"agreed_stay_proof_yes","label":"하단 동의","helperText":"하단 동의 체크","type":"checkbox","x":410,"y":770,"width":16,"height":16,"editable":true,"multiline":false},
+  {"key":"agreed_stay_proof_no","label":"하단 미동의","helperText":"하단 미동의 체크","type":"checkbox","x":480,"y":770,"width":16,"height":16,"editable":true,"multiline":false},
+  {"key":"confirmation_date","label":"확인일자","helperText":"확인일자","type":"text","x":302,"y":854,"width":250,"height":26,"editable":true,"multiline":false},
+  {"key":"traveler_name","label":"여행 신청자 성명","helperText":"여행 신청자 성명","type":"text","x":220,"y":932,"width":350,"height":26,"editable":true,"multiline":false},
+  {"key":"applicant_signature","label":"신청자 서명","helperText":"여행 신청자 서명 또는 인","type":"signature","x":590,"y":931,"width":70,"height":28,"editable":true,"multiline":false},
+  {"key":"traveler_phone_number","label":"연락처","helperText":"여행 신청자 연락처","type":"text","x":220,"y":969,"width":405,"height":26,"editable":true,"multiline":false}
+]',
+    data_source_note = 'MANUAL_TEMPLATE_WANDO_FIXED',
+    preview_subtitle = '완도 원본 PDF 기준 고정 좌표 템플릿입니다. 좌표는 퍼센트가 아니라 PDF 기준 좌표로 관리합니다.',
+    updated_at = NOW()
+WHERE region_id = 1;

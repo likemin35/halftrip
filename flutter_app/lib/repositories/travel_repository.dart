@@ -1,0 +1,78 @@
+import 'dart:typed_data';
+
+import '../models/app_models.dart';
+
+abstract class TravelRepository {
+  String get modeName;
+
+  Future<AppUser> mockLogin(LoginProvider provider);
+  Future<AppUser> localLogin({
+    required String loginId,
+    required String password,
+  });
+  Future<AppUser> localSignUp({
+    required String name,
+    required String loginId,
+    required String password,
+    required String phoneNumber,
+    required String residence,
+  });
+  Future<AppUser> getUser(int userId);
+  Future<List<TripSummary>> getTrips(int userId);
+  Future<TripDetail> getTripDetail(int tripId);
+  Future<List<RegionSummary>> getRegions({String? residence});
+  Future<RegionDetail> getRegionDetail(int regionId, {String? residence});
+  Future<TripSummary> createTrip({
+    required int userId,
+    required TripDraft draft,
+    required int regionId,
+  });
+  Future<List<TripPlaceItem>> replaceTripPlaces(
+    int tripId,
+    List<TripPlaceItem> places,
+  );
+  Future<UploadedFileItem> uploadFile({
+    required int tripId,
+    required FileCategory category,
+    required UploadBinary file,
+  });
+  Future<void> deleteUploadedFile({
+    required int tripId,
+    required int uploadedFileId,
+  });
+  Future<Uint8List> downloadUploadedFileBytes({
+    required int tripId,
+    required int uploadedFileId,
+  });
+  Future<ReceiptItem> analyzeReceipt({
+    required int tripId,
+    required int uploadedFileId,
+    required ReceiptUsageScope usageScope,
+  });
+  Future<LodgingInfo> saveLodgingInfo(int tripId, LodgingInfo lodgingInfo);
+  Future<LodgingInfo> extractLodgingInfo({
+    required int tripId,
+    required int uploadedFileId,
+  });
+  Future<LodgingFormData> getLodgingFormData(int tripId);
+  Future<LodgingFormData> saveLodgingForm(
+    int tripId,
+    LodgingFormSaveRequest request,
+  );
+  Future<LodgingFormData> saveLodgingFormTemplateLayout(
+    int tripId,
+    List<LodgingFormFieldItem> fields,
+  );
+  Future<LodgingFormData> analyzeLodgingFormTemplate(int tripId);
+  String? getLodgingFormTemplatePreviewUrl(int tripId);
+  Future<String> downloadLodgingFormPdf(int tripId);
+  Future<SettlementSummary> getSettlementSummary(int tripId);
+  Future<void> applySettlement(int tripId);
+  Future<NotificationSettings> updateNotificationSettings(
+    int userId,
+    NotificationSettings settings,
+  );
+  Future<List<RegionSummary>> addFavoriteRegion(int userId, int regionId);
+  Future<List<RegionSummary>> removeFavoriteRegion(int userId, int regionId);
+  Future<String> downloadMergedPdf(int tripId, List<int> uploadedFileIds);
+}

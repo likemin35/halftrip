@@ -1,0 +1,15 @@
+[
+  {"key":"traveler_name","label":"Guest name","helperText":"Traveler representative name","type":"text","x":22.6,"y":15.0,"width":15.8,"height":2.4,"editable":true,"multiline":false},
+  {"key":"traveler_phone_number","label":"Guest phone","helperText":"Traveler phone number","type":"text","x":73.2,"y":15.0,"width":11.2,"height":2.4,"editable":true,"multiline":false},
+  {"key":"address","label":"Address","helperText":"Lodging address","type":"text","x":22.8,"y":26.0,"width":64.8,"height":2.8,"editable":true,"multiline":false},
+  {"key":"lodging_name","label":"Lodging name","helperText":"Lodging name","type":"text","x":22.8,"y":36.4,"width":64.8,"height":2.8,"editable":true,"multiline":false},
+  {"key":"trip_date_range","label":"Stay period","helperText":"Stay date range","type":"text","x":19.8,"y":50.3,"width":11.2,"height":2.4,"editable":true,"multiline":false},
+  {"key":"payment_amount","label":"Payment amount","helperText":"Amount paid","type":"text","x":76.0,"y":50.3,"width":8.0,"height":2.4,"editable":true,"multiline":false},
+  {"key":"confirmation_date","label":"Confirmation date","helperText":"Top confirmation date","type":"text","x":70.8,"y":64.0,"width":13.2,"height":2.2,"editable":true,"multiline":false},
+  {"key":"applicant_signature","label":"Applicant signature","helperText":"Traveler signature or stamp","type":"signature","x":76.2,"y":71.2,"width":9.8,"height":3.8,"editable":true,"multiline":false},
+  {"key":"confirmation_date","label":"Confirmation date","helperText":"Bottom confirmation date","type":"text","x":70.8,"y":91.7,"width":13.2,"height":2.2,"editable":false,"multiline":false},
+  {"key":"lodging_name","label":"Lodging name duplicate","helperText":"Repeated lodging name","type":"text","x":67.8,"y":102.9,"width":11.2,"height":1.7,"editable":false,"multiline":false},
+  {"key":"address","label":"Address duplicate","helperText":"Repeated address","type":"text","x":67.8,"y":106.0,"width":11.2,"height":1.7,"editable":false,"multiline":false},
+  {"key":"representative_name","label":"Representative name","helperText":"Host representative name","type":"text","x":67.8,"y":109.0,"width":9.6,"height":1.7,"editable":true,"multiline":false},
+  {"key":"host_signature","label":"Host signature","helperText":"Host signature or stamp","type":"signature","x":84.2,"y":108.4,"width":5.8,"height":3.8,"editable":true,"multiline":false}
+]

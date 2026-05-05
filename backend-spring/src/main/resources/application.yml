@@ -1,0 +1,35 @@
+spring:
+  application:
+    name: travel-mvp-api
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/travel_mvp?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul}
+    username: ${SPRING_DATASOURCE_USERNAME:travel_user}
+    password: ${SPRING_DATASOURCE_PASSWORD:travel_password}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+  flyway:
+    enabled: true
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 40MB
+
+server:
+  port: 8080
+
+app:
+  fastapi-base-url: ${FASTAPI_BASE_URL:http://localhost:8000}
+  allowed-origins: ${APP_ALLOWED_ORIGINS:*}
+  mock-external-data: ${MOCK_EXTERNAL_DATA:true}
+  storage-root: ${APP_STORAGE_ROOT:./uploads}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
