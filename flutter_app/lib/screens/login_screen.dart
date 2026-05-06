@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/app_scope.dart';
 import '../data/residence_options.dart';
+import '../models/app_models.dart';
 import '../widgets/app_shell.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -12,6 +13,9 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  static const bool _useMockLogin =
+      bool.fromEnvironment('USE_MOCK_LOGIN', defaultValue: true);
+
   final _loginIdController = TextEditingController();
   final _passwordController = TextEditingController();
 
@@ -72,6 +76,42 @@ class _LoginScreenState extends State<LoginScreen> {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 28),
+                  if (_useMockLogin) ...[
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            '빠르게 둘러보기',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w900,
+                                ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '배포 환경에서는 처음 로그인 전에 회원가입이 필요합니다. 바로 체험하려면 게스트 로그인을 사용해 주세요.',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: const Color(0xFF64748B),
+                                ),
+                          ),
+                          const SizedBox(height: 16),
+                          OutlinedButton(
+                            onPressed: controller.isBusy
+                                ? null
+                                : () => _handleMockLogin(context),
+                            child: const Text('게스트로 바로 시작하기'),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -209,6 +249,20 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _handleMockLogin(BuildContext context) async {
+    final controller = AppScope.of(context);
+    try {
+      await controller.login(LoginProvider.guest);
+    } catch (_) {
+      if (!context.mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('게스트 로그인에 실패했습니다. 잠시 후 다시 시도해 주세요.')),
+      );
+    }
   }
 
   Future<void> _handleLogin(BuildContext context) async {
