@@ -140,7 +140,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
 
           final highlightedMarker = markers.cast<PlaceMapMarkerData?>().firstWhere(
                 (item) => item?.id == _highlightedPlaceId,
-                orElse: () => markers.isEmpty ? null : markers.first,
+                orElse: () => null,
               );
 
           return ListView(

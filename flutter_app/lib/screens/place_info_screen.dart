@@ -36,10 +36,6 @@ class _PlaceInfoScreenState extends State<PlaceInfoScreen> {
       tripDetail.trip.regionId,
       residence: controller.currentUser?.residence,
     );
-    final places = regionDetail.halfPricePlaces
-        .where((place) => place.latitude != null && place.longitude != null)
-        .toList();
-    _focusedPlace ??= places.isEmpty ? null : places.first;
     return (tripDetail, regionDetail);
   }
 
@@ -131,10 +127,10 @@ class _PlaceInfoScreenState extends State<PlaceInfoScreen> {
 
   PlaceItem? _resolveFocusedPlace(List<PlaceItem> places) {
     if (places.isEmpty) return null;
-    if (_focusedPlace == null) return places.first;
+    if (_focusedPlace == null) return null;
     return places.cast<PlaceItem?>().firstWhere(
           (item) => item?.id == _focusedPlace!.id,
-          orElse: () => places.first,
+          orElse: () => null,
         );
   }
 

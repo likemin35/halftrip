@@ -251,6 +251,7 @@ class _PlaceMapViewState extends State<PlaceMapView> {
             'position': position,
             'yAnchor': 1.12,
             'xAnchor': 0.5,
+            'clickable': true,
             'content': _buildOverlayContent(markerData),
           }),
         ],
@@ -261,8 +262,6 @@ class _PlaceMapViewState extends State<PlaceMapView> {
 
     for (var index = 0; index < markers.length; index++) {
       final markerData = markers[index];
-      DateTime? lastTapAt;
-      Timer? singleTapTimer;
 
       final position = js.JsObject(
         maps['LatLng'] as js.JsFunction,
@@ -302,33 +301,15 @@ class _PlaceMapViewState extends State<PlaceMapView> {
         'click',
         js.allowInterop(() {
           openOverlay(markerData, position);
-
-          final now = DateTime.now();
-          final isDoubleTap = lastTapAt != null &&
-              now.difference(lastTapAt!).inMilliseconds < 260;
-
-          if (isDoubleTap) {
-            singleTapTimer?.cancel();
-            lastTapAt = null;
-            _invokeMarkerCallback(
-              widget.onMarkerDoubleTap,
-              markerData.id,
-            );
-            return;
-          }
-
-          lastTapAt = now;
-          singleTapTimer?.cancel();
-          singleTapTimer = Timer(const Duration(milliseconds: 230), () {
-            _invokeMarkerCallback(
-              widget.onMarkerTap,
-              markerData.id,
-            );
-          });
+          _invokeMarkerCallback(
+            widget.onMarkerTap,
+            markerData.id,
+          );
         }),
       ]);
 
-      if (widget.highlightedMarkerId == markerData.id) {
+      if (widget.highlightedMarkerId != null &&
+          widget.highlightedMarkerId == markerData.id) {
         openOverlay(markerData, position);
       }
     }
