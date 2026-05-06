@@ -45,9 +45,6 @@ class _PlaceMapViewState extends State<PlaceMapView> {
 
   late final String _viewType;
   late final html.DivElement _container;
-  late final html.EventListener _markerClickListener;
-  late final html.EventListener _markerDoubleClickListener;
-  late final html.EventListener _markerActionListener;
   late final html.EventListener _visibilityChangeListener;
 
   StreamSubscription<html.Event>? _resizeSubscription;
@@ -76,40 +73,6 @@ class _PlaceMapViewState extends State<PlaceMapView> {
     ui_web.platformViewRegistry.registerViewFactory(_viewType, (int _) {
       return _container;
     });
-
-    _markerClickListener = (event) {
-      final placeId = _extractPlaceId(event, eventName: 'marker-click');
-      if (placeId != null) {
-        widget.onMarkerTap?.call(placeId);
-      }
-    };
-
-    _markerDoubleClickListener = (event) {
-      final placeId = _extractPlaceId(event, eventName: 'marker-double-click');
-      if (placeId != null) {
-        widget.onMarkerDoubleTap?.call(placeId);
-      }
-    };
-
-    _markerActionListener = (event) {
-      final placeId = _extractPlaceId(event, eventName: 'marker-action');
-      if (placeId != null) {
-        widget.onMarkerAction?.call(placeId);
-      }
-    };
-
-    html.window.addEventListener(
-      'travel-support-kakao-marker-click',
-      _markerClickListener,
-    );
-    html.window.addEventListener(
-      'travel-support-kakao-marker-double-click',
-      _markerDoubleClickListener,
-    );
-    html.window.addEventListener(
-      'travel-support-kakao-marker-action',
-      _markerActionListener,
-    );
     _visibilityChangeListener = (_) => _scheduleRelayout();
     html.document.addEventListener(
       'visibilitychange',
@@ -132,18 +95,6 @@ class _PlaceMapViewState extends State<PlaceMapView> {
   void dispose() {
     _relayoutTimer?.cancel();
     _resizeSubscription?.cancel();
-    html.window.removeEventListener(
-      'travel-support-kakao-marker-click',
-      _markerClickListener,
-    );
-    html.window.removeEventListener(
-      'travel-support-kakao-marker-double-click',
-      _markerDoubleClickListener,
-    );
-    html.window.removeEventListener(
-      'travel-support-kakao-marker-action',
-      _markerActionListener,
-    );
     html.document.removeEventListener(
       'visibilitychange',
       _visibilityChangeListener,
@@ -151,25 +102,20 @@ class _PlaceMapViewState extends State<PlaceMapView> {
     super.dispose();
   }
 
-  int? _extractPlaceId(
-    html.Event event, {
-    required String eventName,
-  }) {
-    if (event is! html.CustomEvent) {
-      return null;
+  void _invokeMarkerCallback(ValueChanged<int>? callback, int placeId) {
+    if (callback == null || !mounted) {
+      return;
     }
-    final detail = event.detail;
-    if (detail is! Map || detail['viewId'] != _viewType) {
-      return null;
-    }
-    final placeId = detail['placeId'];
-    if (placeId is int) {
-      return placeId;
-    }
-    if (placeId is num) {
-      return placeId.toInt();
-    }
-    return null;
+    scheduleMicrotask(() {
+      if (!mounted) {
+        return;
+      }
+      try {
+        callback(placeId);
+      } catch (error) {
+        _showMessage('마커 선택 처리 중 오류가 발생했습니다.\n$error');
+      }
+    });
   }
 
   Future<void> _renderMap() async {
@@ -364,8 +310,8 @@ class _PlaceMapViewState extends State<PlaceMapView> {
           if (isDoubleTap) {
             singleTapTimer?.cancel();
             lastTapAt = null;
-            _dispatchMarkerEvent(
-              'travel-support-kakao-marker-double-click',
+            _invokeMarkerCallback(
+              widget.onMarkerDoubleTap,
               markerData.id,
             );
             return;
@@ -374,8 +320,8 @@ class _PlaceMapViewState extends State<PlaceMapView> {
           lastTapAt = now;
           singleTapTimer?.cancel();
           singleTapTimer = Timer(const Duration(milliseconds: 230), () {
-            _dispatchMarkerEvent(
-              'travel-support-kakao-marker-click',
+            _invokeMarkerCallback(
+              widget.onMarkerTap,
               markerData.id,
             );
           });
@@ -417,18 +363,6 @@ class _PlaceMapViewState extends State<PlaceMapView> {
 
     map.callMethod('setBounds', [bounds]);
     _scheduleRelayout();
-  }
-
-  void _dispatchMarkerEvent(String name, int placeId) {
-    html.window.dispatchEvent(
-      html.CustomEvent(
-        name,
-        detail: {
-          'viewId': _viewType,
-          'placeId': placeId,
-        },
-      ),
-    );
   }
 
   html.DivElement _buildOverlayContent(PlaceMapMarkerData marker) {
@@ -518,7 +452,7 @@ class _PlaceMapViewState extends State<PlaceMapView> {
       button.onClick.listen((event) {
         event.preventDefault();
         event.stopPropagation();
-        _dispatchMarkerEvent('travel-support-kakao-marker-action', marker.id);
+        _invokeMarkerCallback(widget.onMarkerAction, marker.id);
       });
       root.append(button);
     }
