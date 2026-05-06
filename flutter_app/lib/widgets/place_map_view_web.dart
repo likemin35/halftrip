@@ -88,7 +88,9 @@ class _PlaceMapViewState extends State<PlaceMapView> {
   @override
   void didUpdateWidget(covariant PlaceMapView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    scheduleMicrotask(_renderMap);
+    if (_shouldRebuildMap(oldWidget, widget)) {
+      scheduleMicrotask(_renderMap);
+    }
   }
 
   @override
@@ -116,6 +118,45 @@ class _PlaceMapViewState extends State<PlaceMapView> {
         _showMessage('마커 선택 처리 중 오류가 발생했습니다.\n$error');
       }
     });
+  }
+
+  bool _shouldRebuildMap(PlaceMapView oldWidget, PlaceMapView newWidget) {
+    if (oldWidget.kakaoEnabled != newWidget.kakaoEnabled ||
+        oldWidget.connectSequentially != newWidget.connectSequentially ||
+        oldWidget.emptyMessage != newWidget.emptyMessage ||
+        oldWidget.height != newWidget.height ||
+        oldWidget.markers.length != newWidget.markers.length ||
+        oldWidget.routeMarkers.length != newWidget.routeMarkers.length) {
+      return true;
+    }
+
+    for (var index = 0; index < oldWidget.markers.length; index++) {
+      final before = oldWidget.markers[index];
+      final after = newWidget.markers[index];
+      if (before.id != after.id ||
+          before.name != after.name ||
+          before.address != after.address ||
+          before.latitude != after.latitude ||
+          before.longitude != after.longitude ||
+          before.selected != after.selected ||
+          before.regionLabel != after.regionLabel ||
+          before.imageAssetPath != after.imageAssetPath ||
+          before.actionLabel != after.actionLabel) {
+        return true;
+      }
+    }
+
+    for (var index = 0; index < oldWidget.routeMarkers.length; index++) {
+      final before = oldWidget.routeMarkers[index];
+      final after = newWidget.routeMarkers[index];
+      if (before.id != after.id ||
+          before.latitude != after.latitude ||
+          before.longitude != after.longitude) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   Future<void> _renderMap() async {
