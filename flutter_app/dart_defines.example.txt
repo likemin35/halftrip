@@ -1,6 +1,6 @@
-API_BASE_URL=http://10.0.2.2:8080/api
-FASTAPI_BASE_URL=http://10.0.2.2:8000
+API_BASE_URL=https://halftrip-springboot.onrender.com/api
+FASTAPI_BASE_URL=https://halftrip-fastapi.onrender.com
 USE_MOCK_LOGIN=true
-USE_MOCK_API=true
-MAP_PROVIDER=mock
+USE_MOCK_API=false
+MAP_PROVIDER=kakao
 KAKAO_MAP_APP_KEY=

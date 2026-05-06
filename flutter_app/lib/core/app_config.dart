@@ -12,11 +12,11 @@ class AppConfig {
     return const AppConfig(
       apiBaseUrl: String.fromEnvironment(
         'API_BASE_URL',
-        defaultValue: 'http://localhost:8080/api',
+        defaultValue: 'https://halftrip-springboot.onrender.com/api',
       ),
       fastApiBaseUrl: String.fromEnvironment(
         'FASTAPI_BASE_URL',
-        defaultValue: 'http://localhost:8000',
+        defaultValue: 'https://halftrip-fastapi.onrender.com',
       ),
       useMockLogin: bool.fromEnvironment('USE_MOCK_LOGIN', defaultValue: true),
       useMockApi: bool.fromEnvironment('USE_MOCK_API', defaultValue: false),
