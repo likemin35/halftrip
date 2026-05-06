@@ -139,6 +139,12 @@ class TravelSupportApp extends StatelessWidget {
           ),
         ),
         home: const _RootPage(),
+        builder: (context, child) {
+          if (child == null) {
+            return const SizedBox.shrink();
+          }
+          return _MobilePrototypeViewport(child: child);
+        },
       ),
     );
   }
@@ -158,6 +164,60 @@ class _RootPage extends StatelessWidget {
         }
         return const MainNavigationScreen();
       },
+    );
+  }
+}
+
+class _MobilePrototypeViewport extends StatelessWidget {
+  const _MobilePrototypeViewport({required this.child});
+
+  final Widget child;
+
+  static const double _mobileCanvasWidth = 430;
+
+  @override
+  Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final screenWidth = mediaQuery.size.width;
+    final useDesktopFrame = screenWidth > _mobileCanvasWidth + 48;
+
+    if (!useDesktopFrame) {
+      return child;
+    }
+
+    return ColoredBox(
+      color: const Color(0xFFEDEFE8),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            maxWidth: _mobileCanvasWidth,
+          ),
+          child: SizedBox(
+            height: mediaQuery.size.height,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: const Color(0xFFF7F7F2),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0x140F172A),
+                    blurRadius: 30,
+                    offset: const Offset(0, 12),
+                  ),
+                ],
+              ),
+              child: ClipRect(
+                child: MediaQuery(
+                  data: mediaQuery.copyWith(
+                    padding: EdgeInsets.zero,
+                    viewPadding: EdgeInsets.zero,
+                  ),
+                  child: child,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
