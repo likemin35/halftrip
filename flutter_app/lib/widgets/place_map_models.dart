@@ -6,6 +6,9 @@ class PlaceMapMarkerData {
     required this.latitude,
     required this.longitude,
     required this.selected,
+    this.regionLabel,
+    this.imageAssetPath,
+    this.actionLabel,
   });
 
   final int id;
@@ -14,6 +17,9 @@ class PlaceMapMarkerData {
   final double latitude;
   final double longitude;
   final bool selected;
+  final String? regionLabel;
+  final String? imageAssetPath;
+  final String? actionLabel;
 }
 
 class PlaceMapRoutePoint {

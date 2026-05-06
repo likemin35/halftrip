@@ -1,9 +1,10 @@
-# General
-.DS_Store
-Thumbs.db
-*.log
+# Keep this repository Flutter-only.
+*
+!/.gitignore
+!/flutter_app/
+!/flutter_app/**
 
-# Flutter
+# Flutter generated files
 flutter_app/.dart_tool/
 flutter_app/.packages
 flutter_app/build/
@@ -12,35 +13,3 @@ flutter_app/.flutter-plugins-dependencies
 flutter_app/.metadata
 flutter_app/android/.gradle/
 flutter_app/ios/Pods/
-
-# Python
-backend-fastapi/.venv/
-backend-fastapi/.venv312/
-backend-fastapi/__pycache__/
-backend-fastapi/app/__pycache__/
-backend-fastapi/app/**/*.pyc
-backend-fastapi/.pytest_cache/
-backend-fastapi/tmp/
-
-# Java
-backend-spring/target/
-backend-spring/.mvn/
-backend-spring/.m2repo/
-backend-spring/.idea/
-backend-spring/*.iml
-
-# Env
-*.env
-.env
-
-# Workspace local environments / temp
-.adk-venv/
-.appdata/
-tmp/
-tmp_appdata/
-tmp_localappdata/
-uploads/
-tmp-trip1-result.pdf
-travel-region-adk/.venv/
-travel-region-adk/.venv-ascii/
-travel-region-adk/.pytest_cache/

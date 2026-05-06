@@ -20,6 +20,7 @@ class PlaceMapView extends StatefulWidget {
     this.highlightedMarkerId,
     this.onMarkerTap,
     this.onMarkerDoubleTap,
+    this.onMarkerAction,
     this.height = 420,
   });
 
@@ -31,6 +32,7 @@ class PlaceMapView extends StatefulWidget {
   final int? highlightedMarkerId;
   final ValueChanged<int>? onMarkerTap;
   final ValueChanged<int>? onMarkerDoubleTap;
+  final ValueChanged<int>? onMarkerAction;
   final double height;
 
   @override
@@ -45,12 +47,17 @@ class _PlaceMapViewState extends State<PlaceMapView> {
   late final html.DivElement _container;
   late final html.EventListener _markerClickListener;
   late final html.EventListener _markerDoubleClickListener;
+  late final html.EventListener _markerActionListener;
   late final html.EventListener _visibilityChangeListener;
+
   StreamSubscription<html.Event>? _resizeSubscription;
   Timer? _relayoutTimer;
+
   js.JsObject? _map;
   js.JsObject? _bounds;
   js.JsObject? _polyline;
+  js.JsObject? _activeOverlay;
+
   String? _statusMessage = '카카오맵을 불러오는 중입니다.';
 
   @override
@@ -71,30 +78,23 @@ class _PlaceMapViewState extends State<PlaceMapView> {
     });
 
     _markerClickListener = (event) {
-      if (event is! html.CustomEvent) {
-        return;
-      }
-      final detail = event.detail;
-      if (detail is! Map || detail['viewId'] != _viewType) {
-        return;
-      }
-      final placeId = detail['placeId'];
-      if (placeId is int) {
+      final placeId = _extractPlaceId(event, eventName: 'marker-click');
+      if (placeId != null) {
         widget.onMarkerTap?.call(placeId);
       }
     };
 
     _markerDoubleClickListener = (event) {
-      if (event is! html.CustomEvent) {
-        return;
-      }
-      final detail = event.detail;
-      if (detail is! Map || detail['viewId'] != _viewType) {
-        return;
-      }
-      final placeId = detail['placeId'];
-      if (placeId is int) {
+      final placeId = _extractPlaceId(event, eventName: 'marker-double-click');
+      if (placeId != null) {
         widget.onMarkerDoubleTap?.call(placeId);
+      }
+    };
+
+    _markerActionListener = (event) {
+      final placeId = _extractPlaceId(event, eventName: 'marker-action');
+      if (placeId != null) {
+        widget.onMarkerAction?.call(placeId);
       }
     };
 
@@ -105,6 +105,10 @@ class _PlaceMapViewState extends State<PlaceMapView> {
     html.window.addEventListener(
       'travel-support-kakao-marker-double-click',
       _markerDoubleClickListener,
+    );
+    html.window.addEventListener(
+      'travel-support-kakao-marker-action',
+      _markerActionListener,
     );
     _visibilityChangeListener = (_) => _scheduleRelayout();
     html.document.addEventListener(
@@ -136,11 +140,36 @@ class _PlaceMapViewState extends State<PlaceMapView> {
       'travel-support-kakao-marker-double-click',
       _markerDoubleClickListener,
     );
+    html.window.removeEventListener(
+      'travel-support-kakao-marker-action',
+      _markerActionListener,
+    );
     html.document.removeEventListener(
       'visibilitychange',
       _visibilityChangeListener,
     );
     super.dispose();
+  }
+
+  int? _extractPlaceId(
+    html.Event event, {
+    required String eventName,
+  }) {
+    if (event is! html.CustomEvent) {
+      return null;
+    }
+    final detail = event.detail;
+    if (detail is! Map || detail['viewId'] != _viewType) {
+      return null;
+    }
+    final placeId = detail['placeId'];
+    if (placeId is int) {
+      return placeId;
+    }
+    if (placeId is num) {
+      return placeId.toInt();
+    }
+    return null;
   }
 
   Future<void> _renderMap() async {
@@ -155,7 +184,8 @@ class _PlaceMapViewState extends State<PlaceMapView> {
 
     if (!widget.kakaoEnabled) {
       _showMessage(
-        '카카오맵 키가 연결되지 않았습니다. MAP_PROVIDER=kakao 와 KAKAO_MAP_APP_KEY 값을 확인해 주세요.',
+        '카카오맵 키가 연결되지 않았습니다. '
+        'MAP_PROVIDER=kakao 와 KAKAO_MAP_APP_KEY 값을 확인해 주세요.',
       );
       return;
     }
@@ -170,7 +200,8 @@ class _PlaceMapViewState extends State<PlaceMapView> {
       final kakaoObject = js.context['kakao'];
       if (kakaoObject == null) {
         _showMessage(
-          '카카오맵 SDK를 불러오지 못했습니다. JavaScript 키와 Web 도메인을 확인해 주세요.',
+          '카카오맵 SDK를 불러오지 못했습니다. '
+          '브라우저 콘솔과 네트워크 상태를 확인해 주세요.',
         );
         return;
       }
@@ -179,7 +210,7 @@ class _PlaceMapViewState extends State<PlaceMapView> {
       final maps = kakao['maps'] as js.JsObject?;
       if (maps == null) {
         _showMessage(
-          '카카오맵 SDK는 로드됐지만 maps 객체를 찾지 못했습니다. JavaScript 키와 Web 도메인을 다시 확인해 주세요.',
+          '카카오맵 SDK는 로드됐지만 maps 객체를 찾지 못했습니다.',
         );
         return;
       }
@@ -195,9 +226,7 @@ class _PlaceMapViewState extends State<PlaceMapView> {
         }),
       ]);
     } catch (error) {
-      _showMessage(
-        '카카오맵을 표시하는 중 오류가 발생했습니다.\n$error',
-      );
+      _showMessage('카카오맵을 표시하는 중 오류가 발생했습니다.\n$error');
     }
   }
 
@@ -220,13 +249,9 @@ class _PlaceMapViewState extends State<PlaceMapView> {
           'https://dapi.kakao.com/v2/maps/sdk.js?appkey=${const String.fromEnvironment('KAKAO_MAP_APP_KEY')}&autoload=false'
       ..async = true;
 
-    script.onLoad.listen((_) {
-      completer.complete();
-    });
+    script.onLoad.listen((_) => completer.complete());
     script.onError.listen((_) {
-      completer.completeError(
-        StateError('Failed to load Kakao Map SDK'),
-      );
+      completer.completeError(StateError('Failed to load Kakao Map SDK'));
     });
 
     html.document.head?.append(script);
@@ -243,31 +268,56 @@ class _PlaceMapViewState extends State<PlaceMapView> {
 
     _container.children.clear();
     _polyline = null;
+    _activeOverlay = null;
 
     final centerMarker = markers.first;
     final center = js.JsObject(
       maps['LatLng'] as js.JsFunction,
       [centerMarker.latitude, centerMarker.longitude],
     );
-    final mapOptions = js.JsObject.jsify({
-      'center': center,
-      'level': 10,
-    });
+
     final map = js.JsObject(
       maps['Map'] as js.JsFunction,
-      [_container, mapOptions],
+      [
+        _container,
+        js.JsObject.jsify({
+          'center': center,
+          'level': 9,
+        }),
+      ],
     );
 
     final bounds = js.JsObject(maps['LatLngBounds'] as js.JsFunction);
+    final eventApi = maps['event'] as js.JsObject;
     final markerImageCtor = maps['MarkerImage'] as js.JsFunction;
     final sizeCtor = maps['Size'] as js.JsFunction;
     final pointCtor = maps['Point'] as js.JsFunction;
-    final eventApi = maps['event'] as js.JsObject;
+
+    void openOverlay(
+      PlaceMapMarkerData markerData,
+      js.JsObject position,
+    ) {
+      _activeOverlay?.callMethod('setMap', [null]);
+      final overlay = js.JsObject(
+        maps['CustomOverlay'] as js.JsFunction,
+        [
+          js.JsObject.jsify({
+            'position': position,
+            'yAnchor': 1.12,
+            'xAnchor': 0.5,
+            'content': _buildOverlayContent(markerData),
+          }),
+        ],
+      );
+      overlay.callMethod('setMap', [map]);
+      _activeOverlay = overlay;
+    }
 
     for (var index = 0; index < markers.length; index++) {
       final markerData = markers[index];
-      DateTime? lastMarkerTapAt;
+      DateTime? lastTapAt;
       Timer? singleTapTimer;
+
       final position = js.JsObject(
         maps['LatLng'] as js.JsFunction,
         [markerData.latitude, markerData.longitude],
@@ -279,7 +329,8 @@ class _PlaceMapViewState extends State<PlaceMapView> {
         [
           _markerSvg(
             label: '${index + 1}',
-            selected: markerData.selected,
+            selected: widget.highlightedMarkerId == markerData.id ||
+                markerData.selected,
           ),
           js.JsObject(sizeCtor, [42, 54]),
           js.JsObject.jsify({
@@ -300,56 +351,39 @@ class _PlaceMapViewState extends State<PlaceMapView> {
         ],
       );
 
-      final infoWindow = js.JsObject(
-        maps['InfoWindow'] as js.JsFunction,
-        [
-          js.JsObject.jsify({
-            'content': _infoWindowHtml(markerData),
-          }),
-        ],
-      );
-
       eventApi.callMethod('addListener', [
         marker,
         'click',
         js.allowInterop(() {
-          infoWindow.callMethod('open', [map, marker]);
+          openOverlay(markerData, position);
+
           final now = DateTime.now();
-          final isDoubleTap = lastMarkerTapAt != null &&
-              now.difference(lastMarkerTapAt!).inMilliseconds < 260;
+          final isDoubleTap = lastTapAt != null &&
+              now.difference(lastTapAt!).inMilliseconds < 260;
+
           if (isDoubleTap) {
             singleTapTimer?.cancel();
-            lastMarkerTapAt = null;
-            html.window.dispatchEvent(
-              html.CustomEvent(
-                'travel-support-kakao-marker-double-click',
-                detail: {
-                  'viewId': _viewType,
-                  'placeId': markerData.id,
-                },
-              ),
+            lastTapAt = null;
+            _dispatchMarkerEvent(
+              'travel-support-kakao-marker-double-click',
+              markerData.id,
             );
             return;
           }
 
-          lastMarkerTapAt = now;
+          lastTapAt = now;
           singleTapTimer?.cancel();
           singleTapTimer = Timer(const Duration(milliseconds: 230), () {
-            html.window.dispatchEvent(
-              html.CustomEvent(
-                'travel-support-kakao-marker-click',
-                detail: {
-                  'viewId': _viewType,
-                  'placeId': markerData.id,
-                },
-              ),
+            _dispatchMarkerEvent(
+              'travel-support-kakao-marker-click',
+              markerData.id,
             );
           });
         }),
       ]);
 
       if (widget.highlightedMarkerId == markerData.id) {
-        infoWindow.callMethod('open', [map, marker]);
+        openOverlay(markerData, position);
       }
     }
 
@@ -373,8 +407,8 @@ class _PlaceMapViewState extends State<PlaceMapView> {
             'map': map,
             'path': js.JsArray.from(path),
             'strokeWeight': 4,
-            'strokeColor': '#7C3AED',
-            'strokeOpacity': 0.9,
+            'strokeColor': '#16A34A',
+            'strokeOpacity': 0.95,
             'strokeStyle': 'dash',
           }),
         ],
@@ -385,12 +419,119 @@ class _PlaceMapViewState extends State<PlaceMapView> {
     _scheduleRelayout();
   }
 
+  void _dispatchMarkerEvent(String name, int placeId) {
+    html.window.dispatchEvent(
+      html.CustomEvent(
+        name,
+        detail: {
+          'viewId': _viewType,
+          'placeId': placeId,
+        },
+      ),
+    );
+  }
+
+  html.DivElement _buildOverlayContent(PlaceMapMarkerData marker) {
+    final root = html.DivElement()
+      ..style.width = '248px'
+      ..style.background = '#ffffff'
+      ..style.border = '1px solid #dbe4ee'
+      ..style.borderRadius = '22px'
+      ..style.boxShadow = '0 16px 32px rgba(15, 23, 42, 0.18)'
+      ..style.padding = '14px';
+
+    final imageBox = html.DivElement()
+      ..style.width = '100%'
+      ..style.height = '112px'
+      ..style.borderRadius = '16px'
+      ..style.overflow = 'hidden'
+      ..style.background = '#f8fafc'
+      ..style.display = 'flex'
+      ..style.alignItems = 'center'
+      ..style.justifyContent = 'center'
+      ..style.marginBottom = '12px';
+
+    if ((marker.imageAssetPath ?? '').isNotEmpty) {
+      imageBox.append(
+        html.ImageElement(src: marker.imageAssetPath!)
+          ..style.width = '100%'
+          ..style.height = '100%'
+          ..style.objectFit = 'cover',
+      );
+    } else {
+      imageBox.append(
+        html.SpanElement()
+          ..text = '사진 없음'
+          ..style.color = '#94a3b8'
+          ..style.fontSize = '13px'
+          ..style.fontWeight = '700',
+      );
+    }
+
+    root.append(imageBox);
+
+    if ((marker.regionLabel ?? '').isNotEmpty) {
+      root.append(
+        html.SpanElement()
+          ..text = marker.regionLabel!
+          ..style.display = 'inline-block'
+          ..style.padding = '6px 10px'
+          ..style.borderRadius = '999px'
+          ..style.background = '#e8f7ee'
+          ..style.color = '#15803d'
+          ..style.fontSize = '12px'
+          ..style.fontWeight = '800'
+          ..style.marginBottom = '10px',
+      );
+    }
+
+    root.append(
+      html.DivElement()
+        ..text = marker.name
+        ..style.fontSize = '18px'
+        ..style.fontWeight = '900'
+        ..style.color = '#0f172a'
+        ..style.marginBottom = '8px',
+    );
+
+    root.append(
+      html.DivElement()
+        ..text = marker.address
+        ..style.fontSize = '13px'
+        ..style.lineHeight = '1.5'
+        ..style.color = '#64748b'
+        ..style.marginBottom = marker.actionLabel == null ? '0' : '14px',
+    );
+
+    if ((marker.actionLabel ?? '').isNotEmpty) {
+      final button = html.ButtonElement()
+        ..text = marker.actionLabel!
+        ..style.width = '100%'
+        ..style.height = '46px'
+        ..style.border = '0'
+        ..style.cursor = 'pointer'
+        ..style.borderRadius = '14px'
+        ..style.background = '#16a34a'
+        ..style.color = '#ffffff'
+        ..style.fontSize = '14px'
+        ..style.fontWeight = '800';
+      button.onClick.listen((event) {
+        event.preventDefault();
+        event.stopPropagation();
+        _dispatchMarkerEvent('travel-support-kakao-marker-action', marker.id);
+      });
+      root.append(button);
+    }
+
+    return root;
+  }
+
   String _markerSvg({
     required String label,
     required bool selected,
   }) {
-    final fill = selected ? '#0F766E' : '#2563EB';
-    final stroke = selected ? '#064E3B' : '#1D4ED8';
+    final fill = selected ? '#16A34A' : '#7C3AED';
+    final stroke = selected ? '#166534' : '#6D28D9';
     final svg = '''
 <svg xmlns="http://www.w3.org/2000/svg" width="42" height="54" viewBox="0 0 42 54">
   <path d="M21 2C10.5066 2 2 10.5066 2 21C2 35.25 21 52 21 52C21 52 40 35.25 40 21C40 10.5066 31.4934 2 21 2Z" fill="$fill" stroke="$stroke" stroke-width="2"/>
@@ -420,35 +561,8 @@ class _PlaceMapViewState extends State<PlaceMapView> {
       _map!.callMethod('relayout');
       _map!.callMethod('setBounds', [_bounds!]);
     } catch (_) {
-      // Retry timers will handle temporary tab/layout issues.
+      // Retry timers handle temporary layout timing.
     }
-  }
-
-  String _infoWindowHtml(PlaceMapMarkerData marker) {
-    final name = _escapeHtml(marker.name);
-    final address = _escapeHtml(marker.address);
-    return '''
-<div style="padding:14px 16px; min-width:220px; max-width:260px; font-family:Arial,sans-serif;">
-  <div style="font-size:16px; font-weight:800; color:#111827; margin-bottom:6px;">$name</div>
-  <div style="font-size:13px; line-height:1.5; color:#475569; margin-bottom:10px;">$address</div>
-  <div style="display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background:#eff6ff; color:#2563eb; font-size:12px; font-weight:700;">
-    한 번 클릭: 위치 확인
-  </div>
-  <div style="height:8px;"></div>
-  <div style="display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background:#ecfdf5; color:#16a34a; font-size:12px; font-weight:700;">
-    두 번 클릭: 여행동선 추가
-  </div>
-</div>
-''';
-  }
-
-  String _escapeHtml(String value) {
-    return value
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#39;');
   }
 
   void _showOverlay(String message) {

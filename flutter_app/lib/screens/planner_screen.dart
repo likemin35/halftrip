@@ -84,7 +84,8 @@ class _PlannerScreenState extends State<PlannerScreen> {
 
     if (_highlightedPlaceId == target.referencePlaceId) {
       setState(() {
-        _highlightedPlaceId = updated.isEmpty ? null : updated.first.referencePlaceId;
+        _highlightedPlaceId =
+            updated.isEmpty ? null : updated.first.referencePlaceId;
       });
     }
 
@@ -97,7 +98,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
     final config = AppConfig.fromEnvironment();
 
     return AppShell(
-      title: '여행 동선',
+      title: '플래너 보기',
       modeName: controller.modeName,
       child: FutureBuilder<TripDetail>(
         future: _future,
@@ -120,6 +121,8 @@ class _PlannerScreenState extends State<PlannerScreen> {
                   latitude: item.latitude!,
                   longitude: item.longitude!,
                   selected: true,
+                  regionLabel: tripDetail.trip.regionName,
+                  imageAssetPath: _placePhotoAsset(item.placeName),
                 ),
               )
               .toList();
@@ -148,41 +151,33 @@ class _PlannerScreenState extends State<PlannerScreen> {
               const _DayTabs(),
               const SizedBox(height: 16),
               SectionCard(
-                title: '지도',
-                child: Column(
-                  children: [
-                    PlaceMapView(
-                      markers: markers,
-                      routeMarkers: routeMarkers,
-                      connectSequentially: true,
-                      emptyMessage: '아직 추가된 장소가 없습니다. 코스 만들기에서 먼저 장소를 담아 주세요.',
-                      kakaoEnabled: config.canUseKakaoMap,
-                      highlightedMarkerId: highlightedMarker?.id,
-                      onMarkerTap: (placeId) {
-                        setState(() {
-                          _highlightedPlaceId = placeId;
-                        });
-                      },
-                      onMarkerDoubleTap: (placeId) {
-                        setState(() {
-                          _highlightedPlaceId = placeId;
-                        });
-                      },
-                      height: 380,
-                    ),
-                    if (highlightedMarker != null) ...[
-                      const SizedBox(height: 14),
-                      _SelectedPlaceCard(
-                        marker: highlightedMarker,
-                        regionName: tripDetail.trip.regionName,
-                      ),
-                    ],
-                  ],
+                title: '여행 지도',
+                subtitle: '추가한 순서대로 마커가 표시되고, 점선 경로로 이동 순서가 이어집니다.',
+                child: PlaceMapView(
+                  markers: markers,
+                  routeMarkers: routeMarkers,
+                  connectSequentially: true,
+                  emptyMessage:
+                      '아직 추가된 장소가 없습니다. 직접 코스 만들기에서 장소를 먼저 담아 주세요.',
+                  kakaoEnabled: config.canUseKakaoMap,
+                  highlightedMarkerId: highlightedMarker?.id,
+                  onMarkerTap: (placeId) {
+                    setState(() {
+                      _highlightedPlaceId = placeId;
+                    });
+                  },
+                  onMarkerDoubleTap: (placeId) {
+                    setState(() {
+                      _highlightedPlaceId = placeId;
+                    });
+                  },
+                  height: 500,
                 ),
               ),
               const SizedBox(height: 16),
               SectionCard(
                 title: '방문 순서',
+                subtitle: '장소를 빼거나 순서를 바꾸면 지도 마커와 점선 경로도 함께 바뀝니다.',
                 child: Column(
                   children: [
                     if (places.isEmpty)
@@ -213,7 +208,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
 
                           await _savePlaces(
                             reordered,
-                            snackBarMessage: '여행 동선 순서를 저장했습니다.',
+                            snackBarMessage: '방문 순서를 변경했습니다.',
                           );
                         },
                         itemBuilder: (context, index) {
@@ -250,7 +245,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
                                   children: [
                                     CircleAvatar(
                                       radius: 16,
-                                      backgroundColor: const Color(0xFF7C3AED),
+                                      backgroundColor: const Color(0xFF16A34A),
                                       foregroundColor: Colors.white,
                                       child: Text('${index + 1}'),
                                     ),
@@ -300,15 +295,6 @@ class _PlannerScreenState extends State<PlannerScreen> {
                           );
                         },
                       ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: () => Navigator.of(context).pop(),
-                        icon: const Icon(Icons.route_outlined),
-                        label: const Text('직접 코스 만들기로 돌아가기'),
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -349,7 +335,7 @@ class _PlannerHeaderCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '${trip.regionName} 여행',
+            '${trip.regionName} 여행 동선',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w900,
@@ -457,117 +443,6 @@ class _DayTabs extends StatelessWidget {
           ),
         );
       }).toList(),
-    );
-  }
-}
-
-class _SelectedPlaceCard extends StatelessWidget {
-  const _SelectedPlaceCard({
-    required this.marker,
-    required this.regionName,
-  });
-
-  final PlaceMapMarkerData marker;
-  final String regionName;
-
-  @override
-  Widget build(BuildContext context) {
-    final imageAsset = _placePhotoAsset(marker.name);
-
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _InfoBadge(
-                label: regionName,
-                backgroundColor: const Color(0xFFE7F8EF),
-                textColor: const Color(0xFF15803D),
-              ),
-              const _InfoBadge(
-                label: '선택된 장소',
-                backgroundColor: Color(0xFFF1F5F9),
-                textColor: Color(0xFF475569),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            marker.name,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: const Color(0xFF111827),
-                  fontWeight: FontWeight.w900,
-                ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            marker.address,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: const Color(0xFF64748B),
-                  height: 1.45,
-                ),
-          ),
-          const SizedBox(height: 14),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: AspectRatio(
-              aspectRatio: 16 / 7,
-              child: imageAsset != null
-                  ? Image.asset(imageAsset, fit: BoxFit.cover)
-                  : Container(
-                      color: const Color(0xFFF8FAFC),
-                      alignment: Alignment.center,
-                      child: Text(
-                        '사진 없음',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              color: const Color(0xFF94A3B8),
-                              fontWeight: FontWeight.w700,
-                            ),
-                      ),
-                    ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _InfoBadge extends StatelessWidget {
-  const _InfoBadge({
-    required this.label,
-    required this.backgroundColor,
-    required this.textColor,
-  });
-
-  final String label;
-  final Color backgroundColor;
-  final Color textColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: textColor,
-              fontWeight: FontWeight.w800,
-            ),
-      ),
     );
   }
 }
