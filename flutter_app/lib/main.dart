@@ -174,6 +174,7 @@ class _MobilePrototypeViewport extends StatelessWidget {
   final Widget child;
 
   static const double _mobileCanvasWidth = 430;
+  static const double _desktopPreviewScale = 0.88;
 
   @override
   Widget build(BuildContext context) {
@@ -206,12 +207,19 @@ class _MobilePrototypeViewport extends StatelessWidget {
                 ],
               ),
               child: ClipRect(
-                child: MediaQuery(
-                  data: mediaQuery.copyWith(
-                    padding: EdgeInsets.zero,
-                    viewPadding: EdgeInsets.zero,
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: Transform.scale(
+                    scale: _desktopPreviewScale,
+                    alignment: Alignment.topCenter,
+                    child: MediaQuery(
+                      data: mediaQuery.copyWith(
+                        padding: EdgeInsets.zero,
+                        viewPadding: EdgeInsets.zero,
+                      ),
+                      child: child,
+                    ),
                   ),
-                  child: child,
                 ),
               ),
             ),
