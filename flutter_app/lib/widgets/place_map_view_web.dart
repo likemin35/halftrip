@@ -363,28 +363,32 @@ class _PlaceMapViewState extends State<PlaceMapView> {
     _bounds = bounds;
 
     if (widget.connectSequentially && widget.routeMarkers.length >= 2) {
-      final path = widget.routeMarkers
-          .map(
-            (point) => js.JsObject(
-              maps['LatLng'] as js.JsFunction,
-              [point.latitude, point.longitude],
-            ),
-          )
-          .toList();
+      try {
+        final path = widget.routeMarkers
+            .map(
+              (point) => js.JsObject(
+                maps['LatLng'] as js.JsFunction,
+                [point.latitude, point.longitude],
+              ),
+            )
+            .toList(growable: false);
 
-      _polyline = js.JsObject(
-        maps['Polyline'] as js.JsFunction,
-        [
-          js.JsObject.jsify({
-            'map': map,
-            'path': js.JsArray.from(path),
-            'strokeWeight': 4,
-            'strokeColor': '#16A34A',
-            'strokeOpacity': 0.95,
-            'strokeStyle': 'dash',
-          }),
-        ],
-      );
+        _polyline = js.JsObject(
+          maps['Polyline'] as js.JsFunction,
+          [
+            js.JsObject.jsify({
+              'map': map,
+              'path': path,
+              'strokeWeight': 4,
+              'strokeColor': '#16A34A',
+              'strokeOpacity': 0.95,
+              'strokeStyle': 'dash',
+            }),
+          ],
+        );
+      } catch (_) {
+        _polyline = null;
+      }
     }
 
     map.callMethod('setBounds', [bounds]);
