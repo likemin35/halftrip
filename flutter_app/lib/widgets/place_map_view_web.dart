@@ -497,9 +497,9 @@ class _PlaceMapViewState extends State<PlaceMapView> {
       return rawPath;
     }
     if (rawPath.startsWith('assets/')) {
-      return 'assets/$rawPath';
+      return Uri.base.resolve('assets/$rawPath').toString();
     }
-    return rawPath;
+    return Uri.base.resolve(rawPath).toString();
   }
 
   html.DivElement _buildMarkerContent({
