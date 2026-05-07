@@ -46,12 +46,11 @@ class _PlaceInfoScreenState extends State<PlaceInfoScreen> {
   }
 
   Future<void> _openPlanner() async {
-    await Navigator.of(context).push(
+    await Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (_) => PlannerScreen(tripId: widget.tripId),
       ),
     );
-    await _refresh();
   }
 
   Future<void> _addPlaceToPlanner(
