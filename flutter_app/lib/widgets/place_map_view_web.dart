@@ -417,7 +417,7 @@ class _PlaceMapViewState extends State<PlaceMapView> {
 
     if ((marker.imageAssetPath ?? '').isNotEmpty) {
       imageBox.append(
-        html.ImageElement(src: marker.imageAssetPath!)
+        html.ImageElement(src: _resolveDomImageSource(marker.imageAssetPath!))
           ..style.width = '100%'
           ..style.height = '100%'
           ..style.objectFit = 'cover',
@@ -488,6 +488,18 @@ class _PlaceMapViewState extends State<PlaceMapView> {
     }
 
     return root;
+  }
+
+  String _resolveDomImageSource(String rawPath) {
+    if (rawPath.startsWith('http://') ||
+        rawPath.startsWith('https://') ||
+        rawPath.startsWith('data:')) {
+      return rawPath;
+    }
+    if (rawPath.startsWith('assets/')) {
+      return 'assets/$rawPath';
+    }
+    return rawPath;
   }
 
   html.DivElement _buildMarkerContent({
