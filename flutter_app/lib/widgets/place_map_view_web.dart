@@ -50,7 +50,7 @@ class _PlaceMapViewState extends State<PlaceMapView> {
   StreamSubscription<html.Event>? _resizeSubscription;
   Timer? _relayoutTimer;
   final List<Function> _markerJsCallbacks = [];
-  final List<js.JsObject> _markerObjects = [];
+  final List<js.JsObject> _markerOverlayObjects = [];
 
   js.JsObject? _map;
   js.JsObject? _bounds;
@@ -259,7 +259,7 @@ class _PlaceMapViewState extends State<PlaceMapView> {
     _polyline = null;
     _activeOverlay = null;
     _markerJsCallbacks.clear();
-    _markerObjects.clear();
+    _markerOverlayObjects.clear();
 
     final centerMarker = markers.first;
     final center = js.JsObject(
@@ -279,11 +279,6 @@ class _PlaceMapViewState extends State<PlaceMapView> {
     );
 
     final bounds = js.JsObject(maps['LatLngBounds'] as js.JsFunction);
-    final eventApi = maps['event'] as js.JsObject;
-    final markerImageCtor = maps['MarkerImage'] as js.JsFunction;
-    final sizeCtor = maps['Size'] as js.JsFunction;
-    final pointCtor = maps['Point'] as js.JsFunction;
-
     void openOverlay(
       PlaceMapMarkerData markerData,
       js.JsObject position,
@@ -313,35 +308,11 @@ class _PlaceMapViewState extends State<PlaceMapView> {
         [markerData.latitude, markerData.longitude],
       );
       bounds.callMethod('extend', [position]);
-
-      final image = js.JsObject(
-        markerImageCtor,
-        [
-          _markerSvg(
-            label: '${index + 1}',
-            selected: widget.highlightedMarkerId == markerData.id ||
-                markerData.selected,
-          ),
-          js.JsObject(sizeCtor, [42, 54]),
-          js.JsObject.jsify({
-            'offset': js.JsObject(pointCtor, [21, 54]),
-          }),
-        ],
+      final markerContent = _buildMarkerContent(
+        label: '${index + 1}',
+        selected: widget.highlightedMarkerId == markerData.id ||
+            markerData.selected,
       );
-
-      final marker = js.JsObject(
-        maps['Marker'] as js.JsFunction,
-        [
-          js.JsObject.jsify({
-            'position': position,
-            'map': map,
-            'title': markerData.name,
-            'image': image,
-            'clickable': true,
-          }),
-        ],
-      );
-      _markerObjects.add(marker);
 
       final clickCallback = js.allowInterop(() {
         openOverlay(markerData, position);
@@ -352,11 +323,26 @@ class _PlaceMapViewState extends State<PlaceMapView> {
       });
       _markerJsCallbacks.add(clickCallback);
 
-      eventApi.callMethod('addListener', [
-        marker,
-        'click',
-        clickCallback,
-      ]);
+      markerContent.onClick.listen((event) {
+        event.preventDefault();
+        event.stopPropagation();
+        clickCallback();
+      });
+
+      final markerOverlay = js.JsObject(
+        maps['CustomOverlay'] as js.JsFunction,
+        [
+          js.JsObject.jsify({
+            'position': position,
+            'yAnchor': 1,
+            'xAnchor': 0.5,
+            'clickable': true,
+            'content': markerContent,
+          }),
+        ],
+      );
+      markerOverlay.callMethod('setMap', [map]);
+      _markerOverlayObjects.add(markerOverlay);
 
       if (widget.highlightedMarkerId != null &&
           widget.highlightedMarkerId == markerData.id) {
@@ -487,6 +473,29 @@ class _PlaceMapViewState extends State<PlaceMapView> {
       });
       root.append(button);
     }
+
+    return root;
+  }
+
+  html.DivElement _buildMarkerContent({
+    required String label,
+    required bool selected,
+  }) {
+    final root = html.DivElement()
+      ..style.width = '42px'
+      ..style.height = '54px'
+      ..style.cursor = 'pointer'
+      ..style.display = 'flex'
+      ..style.alignItems = 'center'
+      ..style.justifyContent = 'center';
+
+    root.append(
+      html.ImageElement(src: _markerSvg(label: label, selected: selected))
+        ..style.width = '42px'
+        ..style.height = '54px'
+        ..style.display = 'block'
+        ..style.pointerEvents = 'none',
+    );
 
     return root;
   }
