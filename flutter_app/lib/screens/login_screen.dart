@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../core/app_scope.dart';
 import '../data/residence_options.dart';
-import '../models/app_models.dart';
 import '../widgets/app_shell.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -13,9 +12,6 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  static const bool _useMockLogin =
-      bool.fromEnvironment('USE_MOCK_LOGIN', defaultValue: true);
-
   final _loginIdController = TextEditingController();
   final _passwordController = TextEditingController();
 
@@ -48,6 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return AppShell(
       title: '로그인',
       modeName: controller.modeName,
+      showBottomNavigation: false,
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 460),
@@ -60,7 +57,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    '여행 신청부터 정산 준비까지\n한 번에 관리하는 반값여행 앱',
+                    '여행 신청부터 정산 준비까지\n한 번에 관리하는 하프트립',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.w900,
                           height: 1.25,
@@ -69,49 +66,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    '이제 카카오/구글 대신 아이디와 비밀번호로 바로 시작할 수 있어요.',
+                    '회원가입 후 로그인해서 여행 계획과 정산 준비를 이어가세요.',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: const Color(0xFF64748B),
                         ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 28),
-                  if (_useMockLogin) ...[
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(28),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Text(
-                            '빠르게 둘러보기',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w900,
-                                ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            '배포 환경에서는 처음 로그인 전에 회원가입이 필요합니다. 바로 체험하려면 게스트 로그인을 사용해 주세요.',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: const Color(0xFF64748B),
-                                ),
-                          ),
-                          const SizedBox(height: 16),
-                          OutlinedButton(
-                            onPressed: controller.isBusy
-                                ? null
-                                : () => _handleMockLogin(context),
-                            child: const Text('게스트로 바로 시작하기'),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -191,7 +152,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                       label: '광역시/도',
                                       value: _selectedProvince,
                                       items: residenceOptions.keys.toList(),
-                                      hintText: '거주 광역시/도를 선택해 주세요',
+                                      hintText: '거주 지역을 선택해 주세요',
                                       onChanged: (value) {
                                         setState(() {
                                           _selectedProvince = value;
@@ -204,7 +165,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                       label: '시/군/구',
                                       value: _selectedCity,
                                       items: cities,
-                                      hintText: '거주 시/군/구를 선택해 주세요',
+                                      hintText: '상세 거주지를 선택해 주세요',
                                       onChanged: (value) {
                                         setState(() {
                                           _selectedCity = value;
@@ -216,7 +177,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                       onPressed: controller.isBusy
                                           ? null
                                           : () => _handleSignUp(context),
-                                      child: const Text('회원가입 후 시작하기'),
+                                      child: const Text('회원가입하고 시작하기'),
                                     ),
                                   ],
                                 ),
@@ -249,20 +210,6 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
-  }
-
-  Future<void> _handleMockLogin(BuildContext context) async {
-    final controller = AppScope.of(context);
-    try {
-      await controller.login(LoginProvider.guest);
-    } catch (_) {
-      if (!context.mounted) {
-        return;
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('게스트 로그인에 실패했습니다. 잠시 후 다시 시도해 주세요.')),
-      );
-    }
   }
 
   Future<void> _handleLogin(BuildContext context) async {

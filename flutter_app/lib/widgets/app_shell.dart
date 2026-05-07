@@ -14,6 +14,7 @@ class AppShell extends StatelessWidget {
     this.onTabSelected,
     this.showBackButton,
     this.onBackPressed,
+    this.showBottomNavigation = true,
   });
 
   final String title;
@@ -25,6 +26,7 @@ class AppShell extends StatelessWidget {
   final ValueChanged<int>? onTabSelected;
   final bool? showBackButton;
   final VoidCallback? onBackPressed;
+  final bool showBottomNavigation;
 
   int _fallbackTabIndex() {
     final normalized = title.toLowerCase();
@@ -87,59 +89,61 @@ class AppShell extends StatelessWidget {
         child: child,
       ),
       floatingActionButton: floatingActionButton,
-      bottomNavigationBar: SafeArea(
-        top: false,
-        child: DecoratedBox(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: Color(0x080F172A),
-                blurRadius: 18,
-                offset: Offset(0, -4),
+      bottomNavigationBar: showBottomNavigation
+          ? SafeArea(
+              top: false,
+              child: DecoratedBox(
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color(0x080F172A),
+                      blurRadius: 18,
+                      offset: Offset(0, -4),
+                    ),
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                    child: NavigationBar(
+                      selectedIndex: selectedIndex,
+                      onDestinationSelected: onTabSelected ??
+                          (index) => _handleFallbackTabSelected(context, index),
+                      height: 84,
+                      backgroundColor: Colors.white,
+                      indicatorColor: const Color(0xFFE7F7F0),
+                      shadowColor: Colors.transparent,
+                      labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+                      destinations: const [
+                        NavigationDestination(
+                          icon: Icon(Icons.home_outlined),
+                          selectedIcon: Icon(Icons.home_rounded),
+                          label: '홈',
+                        ),
+                        NavigationDestination(
+                          icon: Icon(Icons.luggage_outlined),
+                          selectedIcon: Icon(Icons.luggage_rounded),
+                          label: '내 여행',
+                        ),
+                        NavigationDestination(
+                          icon: Icon(Icons.storefront_outlined),
+                          selectedIcon: Icon(Icons.storefront_rounded),
+                          label: '온라인몰',
+                        ),
+                        NavigationDestination(
+                          icon: Icon(Icons.forum_outlined),
+                          selectedIcon: Icon(Icons.forum_rounded),
+                          label: '커뮤니티',
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
-            ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-            child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-              child: NavigationBar(
-                selectedIndex: selectedIndex,
-                onDestinationSelected: onTabSelected ??
-                    (index) => _handleFallbackTabSelected(context, index),
-                height: 84,
-                backgroundColor: Colors.white,
-                indicatorColor: const Color(0xFFE7F7F0),
-                shadowColor: Colors.transparent,
-                labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-                destinations: const [
-                  NavigationDestination(
-                    icon: Icon(Icons.home_outlined),
-                    selectedIcon: Icon(Icons.home_rounded),
-                    label: '홈',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.luggage_outlined),
-                    selectedIcon: Icon(Icons.luggage_rounded),
-                    label: '내 여행',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.storefront_outlined),
-                    selectedIcon: Icon(Icons.storefront_rounded),
-                    label: '온라인몰',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.forum_outlined),
-                    selectedIcon: Icon(Icons.forum_rounded),
-                    label: '커뮤니티',
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
+            )
+          : null,
     );
   }
 }
