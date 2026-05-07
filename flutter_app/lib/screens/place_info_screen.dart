@@ -54,7 +54,7 @@ class _PlaceInfoScreenState extends State<PlaceInfoScreen> {
     await _refresh();
   }
 
-  Future<void> _addPlaceAndOpenPlanner(
+  Future<void> _addPlaceToPlanner(
     TripDetail tripDetail,
     PlaceItem place,
   ) async {
@@ -92,10 +92,18 @@ class _PlaceInfoScreenState extends State<PlaceInfoScreen> {
         () => controller.repository.replaceTripPlaces(widget.tripId, payload),
       );
       await controller.refreshTrips();
+      await _refresh();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${place.name}을(를) 플래너에 추가했습니다.')),
+      );
+      return;
     }
 
     if (!mounted) return;
-    await _openPlanner();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('${place.name}은(는) 이미 플래너에 담겨 있습니다.')),
+    );
   }
 
   List<PlaceMapMarkerData> _buildMarkers(
@@ -206,7 +214,7 @@ class _PlaceInfoScreenState extends State<PlaceInfoScreen> {
                         setState(() {
                           _focusedPlace = selected;
                         });
-                        await _addPlaceAndOpenPlanner(tripDetail, selected);
+                        await _addPlaceToPlanner(tripDetail, selected);
                       },
                       height: 500,
                     ),
