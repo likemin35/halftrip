@@ -51,6 +51,7 @@ class _PlaceMapViewState extends State<PlaceMapView> {
   Timer? _relayoutTimer;
   final List<Function> _markerJsCallbacks = [];
   final List<js.JsObject> _markerOverlayObjects = [];
+  int _renderVersion = 0;
 
   js.JsObject? _map;
   js.JsObject? _bounds;
@@ -97,6 +98,7 @@ class _PlaceMapViewState extends State<PlaceMapView> {
 
   @override
   void dispose() {
+    _renderVersion++;
     _relayoutTimer?.cancel();
     _resizeSubscription?.cancel();
     html.document.removeEventListener(
@@ -165,6 +167,7 @@ class _PlaceMapViewState extends State<PlaceMapView> {
     if (!mounted) {
       return;
     }
+    final renderVersion = ++_renderVersion;
 
     if (widget.markers.isEmpty) {
       _showMessage(widget.emptyMessage);
@@ -206,6 +209,9 @@ class _PlaceMapViewState extends State<PlaceMapView> {
 
       maps.callMethod('load', [
         js.allowInterop(() {
+          if (!mounted || renderVersion != _renderVersion) {
+            return;
+          }
           _buildMap(kakao);
           if (mounted) {
             setState(() {
@@ -248,6 +254,9 @@ class _PlaceMapViewState extends State<PlaceMapView> {
   }
 
   void _buildMap(js.JsObject kakao) {
+    if (!mounted) {
+      return;
+    }
     final maps = kakao['maps'] as js.JsObject;
     final markers = widget.markers;
     if (markers.isEmpty) {
