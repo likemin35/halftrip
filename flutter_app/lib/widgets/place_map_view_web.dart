@@ -50,6 +50,7 @@ class _PlaceMapViewState extends State<PlaceMapView> {
   StreamSubscription<html.Event>? _resizeSubscription;
   Timer? _relayoutTimer;
   final List<Function> _markerJsCallbacks = [];
+  final List<js.JsObject> _markerObjects = [];
 
   js.JsObject? _map;
   js.JsObject? _bounds;
@@ -258,6 +259,7 @@ class _PlaceMapViewState extends State<PlaceMapView> {
     _polyline = null;
     _activeOverlay = null;
     _markerJsCallbacks.clear();
+    _markerObjects.clear();
 
     final centerMarker = markers.first;
     final center = js.JsObject(
@@ -335,9 +337,11 @@ class _PlaceMapViewState extends State<PlaceMapView> {
             'map': map,
             'title': markerData.name,
             'image': image,
+            'clickable': true,
           }),
         ],
       );
+      _markerObjects.add(marker);
 
       final clickCallback = js.allowInterop(() {
         openOverlay(markerData, position);
