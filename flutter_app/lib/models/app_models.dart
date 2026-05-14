@@ -1,8 +1,8 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 
 enum LoginProvider { kakao, google, guest }
 
-enum PlaceCategory { halfPrice, digitalTourCard }
+enum PlaceCategory { halfPrice, digitalTourCard, merchant }
 
 enum FileCategory {
   authPhoto,
@@ -42,11 +42,13 @@ extension EnumWireName on PlaceCategory {
   String get wireName => switch (this) {
         PlaceCategory.halfPrice => 'HALF_PRICE',
         PlaceCategory.digitalTourCard => 'DIGITAL_TOUR_CARD',
+        PlaceCategory.merchant => 'MERCHANT',
       };
 
   String get label => switch (this) {
         PlaceCategory.halfPrice => '반값여행',
         PlaceCategory.digitalTourCard => '디지털 관광주민증',
+        PlaceCategory.merchant => '지역화폐 가맹점',
       };
 }
 
@@ -138,6 +140,7 @@ extension LoginProviderWire on LoginProvider {
 extension PlaceCategoryParsing on PlaceCategory {
   static PlaceCategory fromWire(String value) => switch (value.toUpperCase()) {
         'DIGITAL_TOUR_CARD' => PlaceCategory.digitalTourCard,
+        'MERCHANT' => PlaceCategory.merchant,
         _ => PlaceCategory.halfPrice,
       };
 }
@@ -371,12 +374,16 @@ class MerchantItem {
     required this.name,
     required this.address,
     required this.category,
+    required this.latitude,
+    required this.longitude,
   });
 
   final int id;
   final String name;
   final String address;
   final String category;
+  final double? latitude;
+  final double? longitude;
 
   factory MerchantItem.fromJson(Map<String, dynamic> json) {
     return MerchantItem(
@@ -384,6 +391,8 @@ class MerchantItem {
       name: json['name'] as String? ?? '',
       address: json['address'] as String? ?? '',
       category: json['category'] as String? ?? '',
+      latitude: (json['latitude'] as num?)?.toDouble(),
+      longitude: (json['longitude'] as num?)?.toDouble(),
     );
   }
 }
@@ -1124,3 +1133,4 @@ class SavedCourse {
         'createdAt': createdAt.toIso8601String(),
       };
 }
+

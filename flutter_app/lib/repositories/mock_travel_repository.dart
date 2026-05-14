@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -211,6 +211,8 @@ class MockTravelRepository implements TravelRepository {
           name: '완도 특산품 상회',
           address: '전라남도 완도군 시장길 5',
           category: '오프라인 가맹점',
+          latitude: 34.3132,
+          longitude: 126.7581,
         ),
       ],
       onlineMalls: const [
@@ -270,6 +272,8 @@ class MockTravelRepository implements TravelRepository {
           name: '강진 로컬브랜드 마켓',
           address: '전라남도 강진군 읍내로 3',
           category: '오프라인 가맹점',
+          latitude: 34.6421,
+          longitude: 126.7672,
         ),
       ],
       onlineMalls: const [
@@ -327,6 +331,8 @@ class MockTravelRepository implements TravelRepository {
           name: '평창 여행상점',
           address: '강원특별자치도 평창군 관광로 2',
           category: '오프라인 가맹점',
+          latitude: 37.3705,
+          longitude: 128.3902,
         ),
       ],
       onlineMalls: const [
@@ -1213,3 +1219,4 @@ class MockTravelRepository implements TravelRepository {
     return 'application/octet-stream';
   }
 }
+
