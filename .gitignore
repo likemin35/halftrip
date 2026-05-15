@@ -1,6 +1,7 @@
 # Keep this repository Flutter-only.
 *
 !/.gitignore
+!/README.md
 !/flutter_app/
 !/flutter_app/**
 
@@ -13,3 +14,5 @@ flutter_app/.flutter-plugins-dependencies
 flutter_app/.metadata
 flutter_app/android/.gradle/
 flutter_app/ios/Pods/
+# Added by code-review-graph
+.code-review-graph/
