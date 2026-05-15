@@ -36,6 +36,10 @@ abstract class TravelRepository {
     required FileCategory category,
     required UploadBinary file,
   });
+  Future<AuthPhotoReviewResult> analyzeAuthPhoto({
+    required int tripId,
+    required int uploadedFileId,
+  });
   Future<void> deleteUploadedFile({
     required int tripId,
     required int uploadedFileId,

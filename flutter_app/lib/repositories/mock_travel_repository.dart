@@ -634,6 +634,22 @@ class MockTravelRepository implements TravelRepository {
   }
 
   @override
+  Future<AuthPhotoReviewResult> analyzeAuthPhoto({
+    required int tripId,
+    required int uploadedFileId,
+  }) async {
+    final trip = _requireTrip(tripId);
+    return AuthPhotoReviewResult(
+      approved: true,
+      detectedPeopleCount: trip.travelerCount,
+      requiredPeopleCount: trip.travelerCount,
+      facesClear: true,
+      backgroundVisible: true,
+      reason: '모의 환경에서는 인증사진을 자동 승인합니다.',
+    );
+  }
+
+  @override
   Future<void> deleteUploadedFile({
     required int tripId,
     required int uploadedFileId,

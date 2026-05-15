@@ -611,6 +611,35 @@ class UploadedFileItem {
   }
 }
 
+class AuthPhotoReviewResult {
+  const AuthPhotoReviewResult({
+    required this.approved,
+    required this.detectedPeopleCount,
+    required this.requiredPeopleCount,
+    required this.facesClear,
+    required this.backgroundVisible,
+    required this.reason,
+  });
+
+  final bool approved;
+  final int detectedPeopleCount;
+  final int requiredPeopleCount;
+  final bool facesClear;
+  final bool backgroundVisible;
+  final String reason;
+
+  factory AuthPhotoReviewResult.fromJson(Map<String, dynamic> json) {
+    return AuthPhotoReviewResult(
+      approved: json['approved'] as bool? ?? false,
+      detectedPeopleCount: json['detectedPeopleCount'] as int? ?? 0,
+      requiredPeopleCount: json['requiredPeopleCount'] as int? ?? 0,
+      facesClear: json['facesClear'] as bool? ?? false,
+      backgroundVisible: json['backgroundVisible'] as bool? ?? false,
+      reason: json['reason'] as String? ?? '',
+    );
+  }
+}
+
 class ReceiptItem {
   const ReceiptItem({
     required this.id,

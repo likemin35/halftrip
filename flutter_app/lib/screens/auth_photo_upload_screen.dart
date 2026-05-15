@@ -53,7 +53,7 @@ class _AuthPhotoUploadScreenState extends State<AuthPhotoUploadScreen> {
         );
         _previewBytesByFileId[file.id] = bytes;
       } catch (_) {
-        // Keep the screen usable even if a preview download fails.
+        // Ignore preview failures so the screen remains usable.
       }
     }
   }
@@ -99,7 +99,8 @@ class _AuthPhotoUploadScreenState extends State<AuthPhotoUploadScreen> {
     });
 
     try {
-      final uploaded = await AppScope.of(context).repository.uploadFile(
+      final repository = AppScope.of(context).repository;
+      final uploaded = await repository.uploadFile(
         tripId: widget.tripId,
         category: FileCategory.authPhoto,
         file: UploadBinary(
@@ -110,11 +111,35 @@ class _AuthPhotoUploadScreenState extends State<AuthPhotoUploadScreen> {
       );
       _previewBytesByFileId[uploaded.id] = file.bytes!;
 
+      final review = await repository.analyzeAuthPhoto(
+        tripId: widget.tripId,
+        uploadedFileId: uploaded.id,
+      );
+
+      if (!review.approved) {
+        await repository.deleteUploadedFile(
+          tripId: widget.tripId,
+          uploadedFileId: uploaded.id,
+        );
+        _previewBytesByFileId.remove(uploaded.id);
+        if (!mounted) return;
+        await _reload();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('인증사진이 반려되었습니다. ${review.reason}')),
+        );
+        return;
+      }
+
       if (!mounted) return;
       await _reload();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('관광지 인증사진을 등록했습니다. 바로 인증 완료로 처리됩니다.')),
+        SnackBar(
+          content: Text(
+            '인증사진이 승인되었습니다. ${review.detectedPeopleCount}명 얼굴과 배경이 확인되었습니다.',
+          ),
+        ),
       );
     } catch (error) {
       if (!mounted) return;
@@ -182,12 +207,13 @@ class _AuthPhotoUploadScreenState extends State<AuthPhotoUploadScreen> {
               _PrimaryUploadBox(
                 icon: Icons.add_a_photo_rounded,
                 title: _uploading ? '업로드 중입니다' : '관광지 사진 업로드',
-                subtitle: '업로드하면 지금은 바로 AI 인증 통과로 처리합니다.',
+                subtitle:
+                    '등록 인원수만큼 얼굴이 모두 보이고, 배경이 선명한 사진만 통과됩니다.',
                 loading: _uploading,
                 onTap: _uploading ? null : () => _pickAndUploadPhoto(detail),
               ),
               const SizedBox(height: 18),
-              const _PhotoGuideCard(),
+              _PhotoGuideCard(travelerCount: detail.trip.travelerCount),
               const SizedBox(height: 22),
               Text(
                 '등록된 인증샷',
@@ -286,13 +312,15 @@ class _EvidenceStatusHeader extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: completed ? const Color(0xFFE8F8EE) : const Color(0xFFFFF3E8),
+              color:
+                  completed ? const Color(0xFFE8F8EE) : const Color(0xFFFFF3E8),
               borderRadius: BorderRadius.circular(999),
             ),
             child: Text(
               completed ? '완료' : '인증 대기',
               style: TextStyle(
-                color: completed ? const Color(0xFF16A34A) : const Color(0xFFEA580C),
+                color:
+                    completed ? const Color(0xFF16A34A) : const Color(0xFFEA580C),
                 fontWeight: FontWeight.w800,
               ),
             ),
@@ -372,7 +400,9 @@ class _PrimaryUploadBox extends StatelessWidget {
 }
 
 class _PhotoGuideCard extends StatelessWidget {
-  const _PhotoGuideCard();
+  const _PhotoGuideCard({required this.travelerCount});
+
+  final int travelerCount;
 
   @override
   Widget build(BuildContext context) {
@@ -387,18 +417,18 @@ class _PhotoGuideCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '간단한 촬영 안내',
+            '촬영 안내',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   color: const Color(0xFF111827),
                   fontWeight: FontWeight.w900,
                 ),
           ),
           const SizedBox(height: 14),
-          const _GuideLine(text: '배경이 선명하게 나오도록 촬영해 주세요.'),
+          _GuideLine(text: '등록 인원 ${travelerCount}명이 모두 사진에 보여야 합니다.'),
           const SizedBox(height: 10),
-          const _GuideLine(text: '신청자를 포함한 모든 인원이 사진에 함께 나와야 합니다.'),
+          const _GuideLine(text: '얼굴이 가리지 않게 정면에 가깝게 또렷하게 촬영해 주세요.'),
           const SizedBox(height: 10),
-          const _GuideLine(text: '얼굴이 잘 보이도록 정면에 가깝게 찍어 주세요.'),
+          const _GuideLine(text: '관광지 배경이 선명하게 보여야 AI 인증을 통과할 수 있습니다.'),
         ],
       ),
     );

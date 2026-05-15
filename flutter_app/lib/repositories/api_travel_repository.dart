@@ -301,6 +301,21 @@ class ApiTravelRepository implements TravelRepository {
   }
 
   @override
+  Future<AuthPhotoReviewResult> analyzeAuthPhoto({
+    required int tripId,
+    required int uploadedFileId,
+  }) async {
+    final response = await _jsonRequest(
+      'POST',
+      '/trips/$tripId/auth-photos/analyze/$uploadedFileId',
+      body: const {},
+    );
+    return AuthPhotoReviewResult.fromJson(
+      response['data'] as Map<String, dynamic>,
+    );
+  }
+
+  @override
   Future<void> deleteUploadedFile({
     required int tripId,
     required int uploadedFileId,
