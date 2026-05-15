@@ -736,6 +736,7 @@ class MockTravelRepository implements TravelRepository {
       usageScope: resolvedUsageScope,
       reviewStatus: review.$1,
       amount: amount,
+      paymentDateTime: DateTime.now().subtract(const Duration(minutes: 5)),
       eligibleAmount: review.$2,
       reviewReason: review.$3,
       rawText: 'MOCK OCR: ${file.originalFileName}',

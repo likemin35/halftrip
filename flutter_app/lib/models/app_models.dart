@@ -648,6 +648,7 @@ class ReceiptItem {
     required this.usageScope,
     required this.reviewStatus,
     required this.amount,
+    required this.paymentDateTime,
     required this.eligibleAmount,
     required this.reviewReason,
     required this.rawText,
@@ -659,6 +660,7 @@ class ReceiptItem {
   final ReceiptUsageScope usageScope;
   final ReceiptReviewStatus reviewStatus;
   final int? amount;
+  final DateTime? paymentDateTime;
   final int eligibleAmount;
   final String reviewReason;
   final String rawText;
@@ -675,6 +677,7 @@ class ReceiptItem {
         json['reviewStatus'] as String? ?? '',
       ),
       amount: json['amount'] as int?,
+      paymentDateTime: DateTime.tryParse(json['paymentDateTime'] as String? ?? ''),
       eligibleAmount: json['eligibleAmount'] as int? ?? 0,
       reviewReason: json['reviewReason'] as String? ?? '',
       rawText: json['rawText'] as String? ?? '',

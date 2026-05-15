@@ -729,11 +729,7 @@ class _ReceiptInfoCard extends StatelessWidget {
           ),
           _InfoRow(
             label: '결제 일시',
-            value: _extractDateTime(receipt.rawText) ?? '확인되지 않음',
-          ),
-          _InfoRow(
-            label: '업종',
-            value: receipt.usageScope.label,
+            value: _formatPaymentDateTime(receipt.paymentDateTime) ?? '확인되지 않음',
           ),
           _InfoRow(
             label: '결제 수단',
@@ -780,17 +776,9 @@ class _ReceiptInfoCard extends StatelessWidget {
     );
   }
 
-  String? _extractDateTime(String rawText) {
-    final normalized = rawText.replaceAll('/', '-');
-    final fullPattern = RegExp(
-      r'(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2}(?::\d{2})?)',
-    );
-    final match = fullPattern.firstMatch(normalized);
-    if (match == null) return null;
-    final date = match.group(1);
-    final time = match.group(2);
-    if (date == null || time == null) return null;
-    return '$date ${time.length >= 5 ? time.substring(0, 5) : time}';
+  String? _formatPaymentDateTime(DateTime? value) {
+    if (value == null) return null;
+    return DateFormat('yyyy.MM.dd HH:mm').format(value);
   }
 }
 
