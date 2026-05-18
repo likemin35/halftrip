@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../core/app_config.dart';
 import '../core/app_scope.dart';
 import '../models/app_models.dart';
+import '../services/youtube_course_analysis_service.dart';
 import '../widgets/app_shell.dart';
 import 'auth_photo_upload_screen.dart';
 import 'lodging_form_screen.dart';
 import 'place_info_screen.dart';
 import 'planner_screen.dart';
 import 'receipt_evidence_screen.dart';
+import 'region_course_builder_screen.dart';
 import 'settlement_screen.dart';
 import 'submission_package_screen.dart';
 
@@ -136,10 +139,215 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (_) => _AiCourseThemeSheet(
-        onOpenPlanner: _openPlanner,
+        onGenerate: (themes, youtubeUrl) =>
+            _openAiCourseBuilder(detail, themes, youtubeUrl),
       ),
     );
     await _reload();
+  }
+
+  Future<void> _openAiCourseBuilder(
+    TripDetail detail,
+    List<String> themes,
+    String youtubeUrl,
+  ) async {
+    final controller = AppScope.of(context);
+    final regionDetail = await controller.repository.getRegionDetail(
+      detail.trip.regionId,
+      residence: controller.currentUser?.residence,
+    );
+
+    final draftCourseId =
+        'youtube-${detail.trip.id}-${DateTime.now().millisecondsSinceEpoch}';
+    SavedCourse initialCourse = SavedCourse(
+      id: draftCourseId,
+      regionId: detail.trip.regionId,
+      regionName: detail.trip.regionName,
+      title: '${detail.trip.regionName} AI 추천 코스',
+      preferences: themes,
+      stops: const [],
+      createdAt: DateTime.now(),
+    );
+    if (youtubeUrl.trim().isNotEmpty) {
+      YoutubeCourseAnalysisResult? analysis;
+      try {
+        analysis = await controller.runTask(
+          () => YoutubeCourseAnalysisService(AppConfig.fromEnvironment()).analyze(
+            url: youtubeUrl.trim(),
+            regionName: detail.trip.regionName,
+            themes: themes,
+          ),
+        );
+      } catch (error) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('유튜브 분석에 실패했습니다. 테마 기반 추천으로 이어갑니다.')),
+          );
+        }
+      }
+
+      if (analysis != null) {
+        final suggestedStops = _selectYoutubeStops(regionDetail, themes, analysis);
+        if (suggestedStops.isNotEmpty) {
+          initialCourse = SavedCourse(
+            id: draftCourseId,
+            regionId: detail.trip.regionId,
+            regionName: detail.trip.regionName,
+            title: analysis.title?.isNotEmpty == true
+                ? '${detail.trip.regionName} 유튜브 추천 코스'
+                : '${detail.trip.regionName} AI 추천 코스',
+            preferences: themes,
+            stops: suggestedStops,
+            createdAt: DateTime.now(),
+          );
+        }
+        if (!mounted) return;
+        if (analysis.warnings.isNotEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(analysis.warnings.first)),
+          );
+        } else if (analysis.summary.isNotEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(analysis.summary)),
+          );
+        }
+      }
+    }
+
+    if (!mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => RegionCourseBuilderScreen(
+          regionId: detail.trip.regionId,
+          regionName: detail.trip.regionName,
+          initialCourse: initialCourse,
+          tripId: detail.trip.id,
+          initialTripPlaces: detail.selectedPlaces,
+          initialMode: CourseBuildMode.ai,
+        ),
+      ),
+    );
+  }
+
+  List<SavedCourseStop> _selectYoutubeStops(
+    RegionDetail detail,
+    List<String> themes,
+    YoutubeCourseAnalysisResult analysis,
+  ) {
+    final scored = detail.halfPricePlaces
+        .where((place) => place.latitude != null && place.longitude != null)
+        .map(
+          (place) => (
+            place: place,
+            score: _scoreYoutubePlace(place, themes, analysis),
+          ),
+        )
+        .toList()
+      ..sort((a, b) => b.score.compareTo(a.score));
+
+    final selected = <PlaceItem>[];
+    for (final item in scored) {
+      if (item.score <= 0) {
+        continue;
+      }
+      if (selected.any((element) => element.id == item.place.id)) {
+        continue;
+      }
+      selected.add(item.place);
+      if (selected.length >= 4) {
+        break;
+      }
+    }
+
+    if (selected.length < 2) {
+      final fallback = detail.halfPricePlaces
+          .where((place) => place.latitude != null && place.longitude != null)
+          .take(3)
+          .toList();
+      selected
+        ..clear()
+        ..addAll(fallback);
+    }
+
+    return selected
+        .map(
+          (place) => SavedCourseStop(
+            placeId: place.id,
+            name: place.name,
+            address: place.address,
+            latitude: place.latitude ?? 0,
+            longitude: place.longitude ?? 0,
+            sourceType: PlaceCategory.halfPrice.wireName,
+          ),
+        )
+        .toList();
+  }
+
+  int _scoreYoutubePlace(
+    PlaceItem place,
+    List<String> themes,
+    YoutubeCourseAnalysisResult analysis,
+  ) {
+    final text = '${place.name} ${place.address} ${place.description}'.toLowerCase();
+    var total = 0;
+
+    for (final theme in themes) {
+      if (_youtubePlaceTags(place).contains(theme)) {
+        total += 20;
+      }
+    }
+
+    for (final keyword in analysis.keywords) {
+      final normalized = keyword.toLowerCase().trim();
+      if (normalized.isNotEmpty && text.contains(normalized)) {
+        total += 28;
+      }
+    }
+
+    for (final candidate in analysis.suggestedPlaceNames) {
+      final normalized = candidate.toLowerCase().trim();
+      if (normalized.isEmpty) continue;
+      if (text.contains(normalized) || normalized.contains(place.name.toLowerCase())) {
+        total += 120;
+      }
+    }
+
+    final summary = analysis.summary.toLowerCase();
+    if (summary.contains(place.name.toLowerCase())) {
+      total += 60;
+    }
+
+    final transcript = (analysis.transcriptExcerpt ?? '').toLowerCase();
+    if (transcript.contains(place.name.toLowerCase())) {
+      total += 80;
+    }
+
+    return total;
+  }
+
+  Set<String> _youtubePlaceTags(PlaceItem place) {
+    final text = '${place.name} ${place.address} ${place.description}';
+    final tags = <String>{};
+    if (_containsAny(text, ['해수욕장', '해안', '섬', '수목원', '생태', '산', '공원', '숲'])) {
+      tags.addAll(['자연', '힐링']);
+    }
+    if (_containsAny(text, ['박물관', '기념관', '전시관', '유적', '향교', '서원', '관아'])) {
+      tags.addAll(['문화', '체험']);
+    }
+    if (_containsAny(text, ['체험', '치유', '모노레일', '케이블카', '전망대', '타워', '축제'])) {
+      tags.addAll(['체험', '사진']);
+    }
+    if (_containsAny(text, ['시장', '몰', '카페', '맛', '먹', '식당'])) {
+      tags.add('맛집');
+    }
+    if (tags.isEmpty) {
+      tags.addAll(['자연', '문화']);
+    }
+    return tags;
+  }
+
+  bool _containsAny(String source, List<String> keywords) {
+    return keywords.any(source.contains);
   }
 
   List<_ChecklistItemData> _buildChecklist(TripDetail detail) {
@@ -839,10 +1047,10 @@ class _TripCourseActionSheet extends StatelessWidget {
 
 class _AiCourseThemeSheet extends StatefulWidget {
   const _AiCourseThemeSheet({
-    required this.onOpenPlanner,
+    required this.onGenerate,
   });
 
-  final Future<void> Function() onOpenPlanner;
+  final Future<void> Function(List<String> themes, String youtubeUrl) onGenerate;
 
   @override
   State<_AiCourseThemeSheet> createState() => _AiCourseThemeSheetState();
@@ -852,6 +1060,8 @@ class _AiCourseThemeSheetState extends State<_AiCourseThemeSheet> {
   static const List<String> _allThemes = ['자연', '문화', '맛집', '체험'];
   late final List<String> _availableThemes;
   final List<String> _selectedThemes = [];
+  final TextEditingController _youtubeUrlController = TextEditingController();
+  bool _submitting = false;
 
   @override
   void initState() {
@@ -878,8 +1088,31 @@ class _AiCourseThemeSheetState extends State<_AiCourseThemeSheet> {
   }
 
   Future<void> _goToPlanner() async {
-    Navigator.of(context).pop();
-    await widget.onOpenPlanner();
+    if (_submitting) return;
+    setState(() {
+      _submitting = true;
+    });
+    try {
+      final selectedThemes =
+          _selectedThemes.isEmpty ? [..._allThemes] : [..._selectedThemes];
+      Navigator.of(context).pop();
+      await widget.onGenerate(
+        selectedThemes,
+        _youtubeUrlController.text.trim(),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _submitting = false;
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _youtubeUrlController.dispose();
+    super.dispose();
   }
 
   @override
@@ -916,11 +1149,27 @@ class _AiCourseThemeSheetState extends State<_AiCourseThemeSheet> {
             ),
             const SizedBox(height: 8),
             Text(
-              '카드를 끌어 아래 선택 영역에 담아 주세요. 지금은 목업이라 생성 버튼을 누르면 바로 플래너로 이동합니다.',
+              '카드를 끌어 아래 선택 영역에 담아 주세요. 유튜브 링크를 함께 넣으면 자막과 영상 이미지 단서를 바탕으로 추천 코스를 미리 구성합니다.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: const Color(0xFF64748B),
                     height: 1.5,
                   ),
+            ),
+            const SizedBox(height: 18),
+            TextField(
+              controller: _youtubeUrlController,
+              decoration: InputDecoration(
+                labelText: '유튜브 링크 입력',
+                hintText: '완도 여행 브이로그 링크를 붙여넣어 주세요.',
+                helperText: '자막이 있으면 자막을 우선 사용하고, 부족한 단서는 영상 이미지 분석으로 보완합니다.',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                filled: true,
+                fillColor: const Color(0xFFF8FAFC),
+              ),
+              keyboardType: TextInputType.url,
+              textInputAction: TextInputAction.done,
             ),
             const SizedBox(height: 20),
             Text(
@@ -1000,7 +1249,7 @@ class _AiCourseThemeSheetState extends State<_AiCourseThemeSheet> {
             SizedBox(
               width: double.infinity,
               child: FilledButton(
-                onPressed: _goToPlanner,
+                onPressed: _submitting ? null : _goToPlanner,
                 style: FilledButton.styleFrom(
                   minimumSize: const Size.fromHeight(56),
                   backgroundColor: const Color(0xFF16A34A),
@@ -1008,10 +1257,19 @@ class _AiCourseThemeSheetState extends State<_AiCourseThemeSheet> {
                     borderRadius: BorderRadius.circular(18),
                   ),
                 ),
-                child: const Text(
-                  '생성하기',
-                  style: TextStyle(fontWeight: FontWeight.w800),
-                ),
+                child: _submitting
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.4,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text(
+                        '생성하기',
+                        style: TextStyle(fontWeight: FontWeight.w800),
+                      ),
               ),
             ),
           ],
