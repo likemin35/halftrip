@@ -223,7 +223,8 @@ class _YoutubeCourseAnalysisScreenState
 
           final prepared = snapshot.data!;
           final analysis = prepared.analysis;
-          final extractedPlaces = analysis.suggestedPlaceNames;
+          final transcriptPlaces = analysis.transcriptPlaceNames;
+          final extractedPlaces = analysis.frameOnlyPlaceNames;
           final matchedStops = prepared.initialCourse.stops;
 
           return ListView(
@@ -239,15 +240,22 @@ class _YoutubeCourseAnalysisScreenState
               ),
               const SizedBox(height: 16),
               _PlaceListCard(
-                title: '영상에서 추출한 장소 정보',
-                subtitle: '자막과 영상 프레임에서 읽은 관광지/식당 후보입니다.',
+                title: '자막에 없는 영상 추출 장소',
+                subtitle: '프레임/썸네일 OCR로 추가 확인한 관광지·식당 후보만 보여줍니다.',
                 items: extractedPlaces,
-                emptyMessage: '영상에서 직접 추출된 장소명이 없어 지역 관광지 데이터와 테마를 기준으로 추천합니다.',
+                emptyMessage: '자막에 없는 추가 장소는 감지되지 않았습니다.',
+              ),
+              const SizedBox(height: 16),
+              _PlaceListCard(
+                title: '자막에서 확인된 장소',
+                subtitle: '영상 자막에 직접 언급된 장소 목록입니다. 중복 추천 방지를 위해 별도로 분리했습니다.',
+                items: transcriptPlaces,
+                emptyMessage: '자막에서 직접 확인된 장소가 없습니다.',
               ),
               const SizedBox(height: 16),
               _PlaceListCard(
                 title: '현재 지역 데이터와 매칭된 추천 코스',
-                subtitle: '추출된 장소 단서를 현재 지역 지정관광지 목록과 맞춰 코스 초안을 만들었습니다.',
+                subtitle: '자막에 없는 영상 추출 장소를 현재 지역 지정관광지 목록과 맞춰 코스 초안을 만들었습니다.',
                 items: matchedStops.map((item) => item.name).toList(),
                 emptyMessage: '직접 매칭된 장소가 부족해 기본 추천 코스로 채웠습니다.',
               ),

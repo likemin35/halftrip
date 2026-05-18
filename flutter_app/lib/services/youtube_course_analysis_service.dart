@@ -10,6 +10,8 @@ class YoutubeCourseAnalysisResult {
     required this.title,
     required this.summary,
     required this.keywords,
+    required this.transcriptPlaceNames,
+    required this.frameOnlyPlaceNames,
     required this.suggestedPlaceNames,
     required this.transcriptExcerpt,
     required this.usedTranscript,
@@ -23,6 +25,8 @@ class YoutubeCourseAnalysisResult {
   final String? title;
   final String summary;
   final List<String> keywords;
+  final List<String> transcriptPlaceNames;
+  final List<String> frameOnlyPlaceNames;
   final List<String> suggestedPlaceNames;
   final String? transcriptExcerpt;
   final bool usedTranscript;
@@ -39,6 +43,14 @@ class YoutubeCourseAnalysisResult {
       keywords: ((json['keywords'] as List<dynamic>?) ?? const [])
           .map((item) => item.toString())
           .toList(),
+      transcriptPlaceNames:
+          ((json['transcript_place_names'] as List<dynamic>?) ?? const [])
+              .map((item) => item.toString())
+              .toList(),
+      frameOnlyPlaceNames:
+          ((json['frame_only_place_names'] as List<dynamic>?) ?? const [])
+              .map((item) => item.toString())
+              .toList(),
       suggestedPlaceNames:
           ((json['suggested_place_names'] as List<dynamic>?) ?? const [])
               .map((item) => item.toString())
