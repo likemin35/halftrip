@@ -14,6 +14,8 @@ class YoutubeCourseAnalysisResult {
     required this.transcriptExcerpt,
     required this.usedTranscript,
     required this.usedThumbnailOcr,
+    required this.usedFrameOcr,
+    required this.frameCount,
     required this.warnings,
   });
 
@@ -25,6 +27,8 @@ class YoutubeCourseAnalysisResult {
   final String? transcriptExcerpt;
   final bool usedTranscript;
   final bool usedThumbnailOcr;
+  final bool usedFrameOcr;
+  final int frameCount;
   final List<String> warnings;
 
   factory YoutubeCourseAnalysisResult.fromJson(Map<String, dynamic> json) {
@@ -42,6 +46,8 @@ class YoutubeCourseAnalysisResult {
       transcriptExcerpt: json['transcript_excerpt'] as String?,
       usedTranscript: json['used_transcript'] as bool? ?? false,
       usedThumbnailOcr: json['used_thumbnail_ocr'] as bool? ?? false,
+      usedFrameOcr: json['used_frame_ocr'] as bool? ?? false,
+      frameCount: json['frame_count'] as int? ?? 0,
       warnings: ((json['warnings'] as List<dynamic>?) ?? const [])
           .map((item) => item.toString())
           .toList(),

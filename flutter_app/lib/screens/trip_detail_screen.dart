@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../core/app_config.dart';
 import '../core/app_scope.dart';
 import '../models/app_models.dart';
-import '../services/youtube_course_analysis_service.dart';
 import '../widgets/app_shell.dart';
 import 'auth_photo_upload_screen.dart';
 import 'lodging_form_screen.dart';
@@ -14,6 +12,7 @@ import 'receipt_evidence_screen.dart';
 import 'region_course_builder_screen.dart';
 import 'settlement_screen.dart';
 import 'submission_package_screen.dart';
+import 'youtube_course_analysis_screen.dart';
 
 class TripDetailScreen extends StatefulWidget {
   const TripDetailScreen({super.key, required this.tripId});
@@ -151,203 +150,40 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
     List<String> themes,
     String youtubeUrl,
   ) async {
-    final controller = AppScope.of(context);
-    final regionDetail = await controller.repository.getRegionDetail(
-      detail.trip.regionId,
-      residence: controller.currentUser?.residence,
-    );
-
-    final draftCourseId =
-        'youtube-${detail.trip.id}-${DateTime.now().millisecondsSinceEpoch}';
-    SavedCourse initialCourse = SavedCourse(
-      id: draftCourseId,
-      regionId: detail.trip.regionId,
-      regionName: detail.trip.regionName,
-      title: '${detail.trip.regionName} AI 추천 코스',
-      preferences: themes,
-      stops: const [],
-      createdAt: DateTime.now(),
-    );
-    if (youtubeUrl.trim().isNotEmpty) {
-      YoutubeCourseAnalysisResult? analysis;
-      try {
-        analysis = await controller.runTask(
-          () => YoutubeCourseAnalysisService(AppConfig.fromEnvironment()).analyze(
-            url: youtubeUrl.trim(),
-            regionName: detail.trip.regionName,
-            themes: themes,
-          ),
-        );
-      } catch (error) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('유튜브 분석에 실패했습니다. 테마 기반 추천으로 이어갑니다.')),
-          );
-        }
-      }
-
-      if (analysis != null) {
-        final suggestedStops = _selectYoutubeStops(regionDetail, themes, analysis);
-        if (suggestedStops.isNotEmpty) {
-          initialCourse = SavedCourse(
-            id: draftCourseId,
+    if (!mounted) return;
+    if (youtubeUrl.trim().isEmpty) {
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => RegionCourseBuilderScreen(
             regionId: detail.trip.regionId,
             regionName: detail.trip.regionName,
-            title: analysis.title?.isNotEmpty == true
-                ? '${detail.trip.regionName} 유튜브 추천 코스'
-                : '${detail.trip.regionName} AI 추천 코스',
-            preferences: themes,
-            stops: suggestedStops,
-            createdAt: DateTime.now(),
-          );
-        }
-        if (!mounted) return;
-        if (analysis.warnings.isNotEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(analysis.warnings.first)),
-          );
-        } else if (analysis.summary.isNotEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(analysis.summary)),
-          );
-        }
-      }
+            initialCourse: SavedCourse(
+              id: 'ai-${detail.trip.id}-${DateTime.now().millisecondsSinceEpoch}',
+              regionId: detail.trip.regionId,
+              regionName: detail.trip.regionName,
+              title: '${detail.trip.regionName} AI 추천 코스',
+              preferences: themes,
+              stops: const [],
+              createdAt: DateTime.now(),
+            ),
+            tripId: detail.trip.id,
+            initialTripPlaces: detail.selectedPlaces,
+            initialMode: CourseBuildMode.ai,
+          ),
+        ),
+      );
+      return;
     }
 
-    if (!mounted) return;
     await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => RegionCourseBuilderScreen(
-          regionId: detail.trip.regionId,
-          regionName: detail.trip.regionName,
-          initialCourse: initialCourse,
-          tripId: detail.trip.id,
-          initialTripPlaces: detail.selectedPlaces,
-          initialMode: CourseBuildMode.ai,
+        builder: (_) => YoutubeCourseAnalysisScreen(
+          tripDetail: detail,
+          youtubeUrl: youtubeUrl,
+          themes: themes,
         ),
       ),
     );
-  }
-
-  List<SavedCourseStop> _selectYoutubeStops(
-    RegionDetail detail,
-    List<String> themes,
-    YoutubeCourseAnalysisResult analysis,
-  ) {
-    final scored = detail.halfPricePlaces
-        .where((place) => place.latitude != null && place.longitude != null)
-        .map(
-          (place) => (
-            place: place,
-            score: _scoreYoutubePlace(place, themes, analysis),
-          ),
-        )
-        .toList()
-      ..sort((a, b) => b.score.compareTo(a.score));
-
-    final selected = <PlaceItem>[];
-    for (final item in scored) {
-      if (item.score <= 0) {
-        continue;
-      }
-      if (selected.any((element) => element.id == item.place.id)) {
-        continue;
-      }
-      selected.add(item.place);
-      if (selected.length >= 4) {
-        break;
-      }
-    }
-
-    if (selected.length < 2) {
-      final fallback = detail.halfPricePlaces
-          .where((place) => place.latitude != null && place.longitude != null)
-          .take(3)
-          .toList();
-      selected
-        ..clear()
-        ..addAll(fallback);
-    }
-
-    return selected
-        .map(
-          (place) => SavedCourseStop(
-            placeId: place.id,
-            name: place.name,
-            address: place.address,
-            latitude: place.latitude ?? 0,
-            longitude: place.longitude ?? 0,
-            sourceType: PlaceCategory.halfPrice.wireName,
-          ),
-        )
-        .toList();
-  }
-
-  int _scoreYoutubePlace(
-    PlaceItem place,
-    List<String> themes,
-    YoutubeCourseAnalysisResult analysis,
-  ) {
-    final text = '${place.name} ${place.address} ${place.description}'.toLowerCase();
-    var total = 0;
-
-    for (final theme in themes) {
-      if (_youtubePlaceTags(place).contains(theme)) {
-        total += 20;
-      }
-    }
-
-    for (final keyword in analysis.keywords) {
-      final normalized = keyword.toLowerCase().trim();
-      if (normalized.isNotEmpty && text.contains(normalized)) {
-        total += 28;
-      }
-    }
-
-    for (final candidate in analysis.suggestedPlaceNames) {
-      final normalized = candidate.toLowerCase().trim();
-      if (normalized.isEmpty) continue;
-      if (text.contains(normalized) || normalized.contains(place.name.toLowerCase())) {
-        total += 120;
-      }
-    }
-
-    final summary = analysis.summary.toLowerCase();
-    if (summary.contains(place.name.toLowerCase())) {
-      total += 60;
-    }
-
-    final transcript = (analysis.transcriptExcerpt ?? '').toLowerCase();
-    if (transcript.contains(place.name.toLowerCase())) {
-      total += 80;
-    }
-
-    return total;
-  }
-
-  Set<String> _youtubePlaceTags(PlaceItem place) {
-    final text = '${place.name} ${place.address} ${place.description}';
-    final tags = <String>{};
-    if (_containsAny(text, ['해수욕장', '해안', '섬', '수목원', '생태', '산', '공원', '숲'])) {
-      tags.addAll(['자연', '힐링']);
-    }
-    if (_containsAny(text, ['박물관', '기념관', '전시관', '유적', '향교', '서원', '관아'])) {
-      tags.addAll(['문화', '체험']);
-    }
-    if (_containsAny(text, ['체험', '치유', '모노레일', '케이블카', '전망대', '타워', '축제'])) {
-      tags.addAll(['체험', '사진']);
-    }
-    if (_containsAny(text, ['시장', '몰', '카페', '맛', '먹', '식당'])) {
-      tags.add('맛집');
-    }
-    if (tags.isEmpty) {
-      tags.addAll(['자연', '문화']);
-    }
-    return tags;
-  }
-
-  bool _containsAny(String source, List<String> keywords) {
-    return keywords.any(source.contains);
   }
 
   List<_ChecklistItemData> _buildChecklist(TripDetail detail) {
